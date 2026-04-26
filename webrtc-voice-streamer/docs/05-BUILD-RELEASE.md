@@ -71,9 +71,9 @@ python webrtc_server_relay.py
 
 | File                    | Version Location  | Format                  |
 | ----------------------- | ----------------- | ----------------------- |
-| `config.yaml`           | Line 2            | `version: "1.1.6"`      |
+| `config.yaml`           | Line 2            | `version: "1.1.8"`      |
 | `frontend/package.json` | Line 3            | `"version": "1.2.0"`    |
-| `build.yaml`            | Line 6            | `CACHE_BUSTER: "1.1.6"` |
+| `build.yaml`            | Line 6            | `CACHE_BUSTER: "1.1.8"` |
 | `frontend/src/*.ts`     | Card registration | `version: "1.2.0"`      |
 
 ### Step-by-Step
@@ -86,14 +86,14 @@ python webrtc_server_relay.py
 # - PATCH: Bug fixes
 
 # 2. Update config.yaml
-# Edit: version: "1.1.6" → "1.1.7"
+# Edit: version: "1.1.8" → "1.1.9"
 
 # 3. Update frontend/package.json
 cd frontend
 # Edit: "version": "1.2.0" → "1.2.1"
 
 # 4. Update build.yaml
-# Edit: CACHE_BUSTER: "1.1.6" → "1.1.7"
+# Edit: CACHE_BUSTER: "1.1.8" → "1.1.9"
 
 # 5. Update frontend card versions
 # Edit: frontend/src/voice-sending-card.ts (line ~220)
@@ -105,11 +105,11 @@ cd ..
 
 # 7. Commit changes
 git add -A
-git commit -m "chore: bump version to 1.1.7"
+git commit -m "chore: bump version to 1.1.9"
 
 # 8. Tag release
-git tag -a v1.1.7 -m "Release version 1.1.7"
-git push origin v1.1.7
+git tag -a v1.1.9 -m "Release version 1.1.9"
+git push origin v1.1.9
 ```
 
 ---
@@ -130,17 +130,17 @@ git push origin v1.1.7
 # 1. Ensure clean working directory
 git status
 git add -A
-git commit -m "chore: prepare release v1.1.7"
+git commit -m "chore: prepare release v1.1.9"
 
 # 2. Build frontend
 cd frontend && npm run build && cd ..
 
 # 3. Tag release
-git tag -a v1.1.7 -m "Release version 1.1.7"
+git tag -a v1.1.9 -m "Release version 1.1.9"
 
 # 4. Push everything
 git push origin main
-git push origin v1.1.7
+git push origin v1.1.9
 ```
 
 ### Post-Release
@@ -183,7 +183,7 @@ docker run --privileged --rm tonistiigi/binfmt --install all
 # Build for multiple architectures
 docker buildx build \
   --platform linux/amd64,linux/arm64,linux/arm/v7 \
-  -t ghcr.io/ahmed9190/webrtc-voice-streaming:1.1.7 \
+  -t ghcr.io/ahmed9190/webrtc-voice-streaming:1.1.9 \
   --push \
   .
 ```
@@ -200,13 +200,13 @@ docker buildx build \
 python webrtc_server_relay.py
 
 # 3. Bump PATCH version
-# config.yaml: 1.1.6 → 1.1.7
-# build.yaml: 1.1.6 → 1.1.7
+# config.yaml: 1.1.8 → 1.1.9
+# build.yaml: 1.1.8 → 1.1.9
 
 # 4. Commit & push
 git add -A && git commit -m "fix: [description]"
-git tag -a v1.1.7 -m "v1.1.7"
-git push origin main v1.1.7
+git tag -a v1.1.9 -m "v1.1.9"
+git push origin main v1.1.9
 ```
 
 ### Scenario 2: Frontend Feature
@@ -220,9 +220,9 @@ cd frontend && npm run dev
 npm run build
 
 # 4. Bump MINOR version (new feature)
-# config.yaml: 1.1.6 → 1.2.0
+# config.yaml: 1.1.8 → 1.2.0
 # frontend/package.json: 1.2.0 → 1.3.0
-# build.yaml: 1.1.6 → 1.2.0
+# build.yaml: 1.1.8 → 1.2.0
 
 # 5. Commit & push
 git add -A && git commit -m "feat: [description]"

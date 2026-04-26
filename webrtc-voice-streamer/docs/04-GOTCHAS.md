@@ -715,4 +715,4 @@ type: module
 
 **Last Updated:** 2024-03-17  
 **Maintainer:** KarimTIS  
-**Version:** 1.1.7 (backend), 1.2.0 (frontend)
+**Version:** 1.1.8 (backend), 1.2.0 (frontend)

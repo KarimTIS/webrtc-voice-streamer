@@ -1,5 +1,5 @@
 name: "WebRTC Voice Streamer"
-version: "1.1.7"
+version: "1.1.8"
 slug: "webrtc-voice-streamer"
 description: "WebRTC-based real-time audio streaming backend for Home Assistant voice applications"
 url: "https://github.com/KarimTIS/webrtc-voice-streamer"
@@ -32,4 +32,4 @@ options:
 schema:
   log_level: list(trace|debug|info|warning|error)
   audio_port: port
-  ha_address: text
+  ha_address: str
