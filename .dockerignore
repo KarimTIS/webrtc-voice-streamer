@@ -1,0 +1,21 @@
+# Exclude node_modules and local builds from context
+node_modules/
+frontend/node_modules/
+frontend/dist/
+
+# Exclude git and dev docs
+.git/
+.github/
+docs/
+*.md
+
+# Exclude IDE and OS files
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# Exclude test files
+tests/
+frontend/tsconfig.typecheck.json
+
