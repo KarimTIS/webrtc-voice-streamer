@@ -56,7 +56,7 @@ webrtc_backend/
 
 ```bash
 # 1. Clone the repository
-git clone https://github.com/Ahmed9190/webrtc-voice-streaming.git
+git clone https://github.com/KarimTIS/webrtc-voice-streamer.git
 cd webrtc-voice-streaming
 
 # 2. Install frontend dependencies

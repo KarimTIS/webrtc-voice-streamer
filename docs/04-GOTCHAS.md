@@ -707,7 +707,7 @@ type: module
 
 ### Common Support Channels
 
-- **GitHub Issues:** https://github.com/Ahmed9190/webrtc-voice-streaming/issues
+- **GitHub Issues:** https://github.com/KarimTIS/webrtc-voice-streamer/issues
 - **Home Assistant Community:** https://community.home-assistant.io/
 - **Discord:** Home Assistant Discord server
 

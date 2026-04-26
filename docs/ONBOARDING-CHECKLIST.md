@@ -21,7 +21,7 @@ Welcome to the WebRTC Voice Streaming project! This checklist will guide you thr
 #### ☐ Clone Repository
 
 ```bash
-git clone https://github.com/Ahmed9190/webrtc-voice-streaming.git
+git clone https://github.com/KarimTIS/webrtc-voice-streamer.git
 cd webrtc-voice-streaming
 ```
 

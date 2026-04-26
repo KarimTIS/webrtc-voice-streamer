@@ -240,7 +240,7 @@
 
 ### Getting Help
 
-- **GitHub Issues:** https://github.com/Ahmed9190/webrtc-voice-streaming/issues
+- **GitHub Issues:** https://github.com/KarimTIS/webrtc-voice-streamer/issues
 - **Home Assistant Community:** https://community.home-assistant.io/
 - **Documentation:** See `.handover/` directory
 

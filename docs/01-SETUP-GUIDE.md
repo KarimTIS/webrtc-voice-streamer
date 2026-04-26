@@ -18,7 +18,7 @@ Choose one of the following installation methods:
 
    ```
    Settings → Add-ons → Add-on Store → ⋮ (menu) → Repositories
-   URL: https://github.com/Ahmed9190/webrtc-voice-streaming
+   URL: https://github.com/KarimTIS/webrtc-voice-streamer
    Click "Add"
    ```
 
@@ -75,7 +75,7 @@ Choose one of the following installation methods:
 
 ```bash
 # 1. Clone repository
-git clone https://github.com/Ahmed9190/webrtc-voice-streaming.git
+git clone https://github.com/KarimTIS/webrtc-voice-streamer.git
 cd webrtc-voice-streaming
 
 # 2. Build Docker image
@@ -111,7 +111,7 @@ docker logs -f webrtc-backend
 
 ```bash
 # 1. Clone repository
-git clone https://github.com/Ahmed9190/webrtc-voice-streaming.git
+git clone https://github.com/KarimTIS/webrtc-voice-streamer.git
 cd webrtc-voice-streaming
 
 # 2. Build frontend
