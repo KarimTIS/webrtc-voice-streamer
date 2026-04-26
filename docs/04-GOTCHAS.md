@@ -714,5 +714,5 @@ type: module
 ---
 
 **Last Updated:** 2024-03-17  
-**Maintainer:** Ahmed9190  
-**Version:** 1.1.6 (backend), 1.2.0 (frontend)
+**Maintainer:** KarimTIS  
+**Version:** 1.1.7 (backend), 1.2.0 (frontend)

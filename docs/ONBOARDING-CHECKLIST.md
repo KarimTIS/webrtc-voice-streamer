@@ -528,7 +528,7 @@ Template:
 
 ### People
 
-- **Maintainer:** Ahmed9190
+- **Maintainer:** KarimTIS
 - **Channel:** GitHub Issues / Home Assistant Community
 - **Meeting:** [If applicable, add team meeting info]
 
