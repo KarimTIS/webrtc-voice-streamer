@@ -8,12 +8,12 @@ Quick reference for building, versioning, and releasing new versions.
 
 ### Frontend
 
-| When | Command | Notes |
-|------|---------|-------|
-| **After TS changes** | `npm run build` | Required before commit |
-| **During development** | `npm run dev` | Watch mode, auto-rebuild |
-| **Before release** | `npm run build` | Always run before version bump |
-| **Type checking** | `npm run type-check` | Optional, catches TS errors |
+| When                   | Command              | Notes                          |
+| ---------------------- | -------------------- | ------------------------------ |
+| **After TS changes**   | `npm run build`      | Required before commit         |
+| **During development** | `npm run dev`        | Watch mode, auto-rebuild       |
+| **Before release**     | `npm run build`      | Always run before version bump |
+| **Type checking**      | `npm run type-check` | Optional, catches TS errors    |
 
 **Location:** `frontend/` directory
 
@@ -27,11 +27,11 @@ npm run build        # Build for production
 
 ### Backend
 
-| When | Command | Notes |
-|------|---------|-------|
-| **No build needed** | - | Python runs directly |
-| **Test locally** | `python webrtc_server_relay.py` | Development mode |
-| **With SSL** | `export SSL_CERT_FILE=... && python webrtc_server_relay.py` | Production-like |
+| When                | Command                                                     | Notes                |
+| ------------------- | ----------------------------------------------------------- | -------------------- |
+| **No build needed** | -                                                           | Python runs directly |
+| **Test locally**    | `python webrtc_server_relay.py`                             | Development mode     |
+| **With SSL**        | `export SSL_CERT_FILE=... && python webrtc_server_relay.py` | Production-like      |
 
 **Location:** Root directory
 
@@ -69,12 +69,12 @@ python webrtc_server_relay.py
 
 ### Files to Update
 
-| File | Version Location | Format |
-|------|------------------|--------|
-| `config.yaml` | Line 2 | `version: "1.1.6"` |
-| `frontend/package.json` | Line 3 | `"version": "1.2.0"` |
-| `build.yaml` | Line 6 | `CACHE_BUSTER: "1.1.6"` |
-| `frontend/src/*.ts` | Card registration | `version: "1.2.0"` |
+| File                    | Version Location  | Format                  |
+| ----------------------- | ----------------- | ----------------------- |
+| `config.yaml`           | Line 2            | `version: "1.1.6"`      |
+| `frontend/package.json` | Line 3            | `"version": "1.2.0"`    |
+| `build.yaml`            | Line 6            | `CACHE_BUSTER: "1.1.6"` |
+| `frontend/src/*.ts`     | Card registration | `version: "1.2.0"`      |
 
 ### Step-by-Step
 
@@ -248,6 +248,7 @@ git push origin main v1.2.0
 **Symptom:** Changes don't appear after deployment
 
 **Fix:**
+
 ```bash
 cd frontend && npm run build
 git add frontend/dist/

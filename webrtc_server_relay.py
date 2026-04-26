@@ -11,6 +11,7 @@ from aiortc import RTCConfiguration, RTCPeerConnection, RTCSessionDescription
 from aiortc.contrib.media import MediaRelay
 
 from audio_stream_server import AudioStreamServer
+from license_middleware import license_middleware
 
 logger = logging.getLogger(__name__)
 
@@ -20,7 +21,7 @@ class VoiceStreamingServer:
         self.connections: Dict[str, dict] = {}
         self.active_streams: Dict[str, Dict] = {}  # stream_id -> {track, receivers[]}
         self.total_audio_bytes = 0
-        self.app = web.Application()
+        self.app = web.Application(middlewares=[license_middleware])
         self.relay = MediaRelay()
         self.audio_server = AudioStreamServer(self)
         self.setup_routes()
@@ -191,7 +192,7 @@ class VoiceStreamingServer:
 
                 logger.info(f"Stored stream {stream_id} for sender {connection_id}")
 
-                # Broadast availability to all clients
+                # Broadcast availability to all clients
                 await self.broadcast_stream_available(stream_id)
 
                 # Start visualization task
@@ -570,7 +571,9 @@ class VoiceStreamingServer:
 
         try:
             audio_port = int(os.environ.get("AUDIO_PORT", 8081))
-            logger.info(f"Starting standalone Audio Stream HTTP server on port {audio_port}...")
+            logger.info(
+                f"Starting standalone Audio Stream HTTP server on port {audio_port}..."
+            )
             await self.audio_server.start(host=host, port=audio_port)
         except Exception as e:
             logger.error(f"Failed to start standalone Audio Stream server: {e}")

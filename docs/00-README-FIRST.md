@@ -13,6 +13,7 @@ This is a **Home Assistant Add-on** that provides **real-time, bidirectional voi
 ### Why This Exists
 
 Standard Home Assistant audio integrations have **high latency** (2-10 seconds) due to buffering and protocol overhead. WebRTC provides **sub-second latency** (<500ms) by:
+
 - Using peer-to-peer media paths where possible
 - Avoiding unnecessary buffering
 - Leveraging browser-native audio codecs (Opus)
@@ -45,6 +46,7 @@ webrtc_backend/
 ## 🚀 Quick Start (For Developers)
 
 ### Prerequisites
+
 - Home Assistant OS or Supervised installation
 - Docker (for local development)
 - Node.js 20+ (for frontend development)
@@ -54,7 +56,7 @@ webrtc_backend/
 
 ```bash
 # 1. Clone the repository
-git clone https://github.com/Ahmed9190/webrtc-voice-streaming.git
+git clone https://github.com/KarimTIS/webrtc-voice-streamer.git
 cd webrtc-voice-streaming
 
 # 2. Install frontend dependencies
@@ -88,30 +90,36 @@ npm run dev
 
 ## 📚 Documentation Navigation
 
-| Document | Purpose | When to Read |
-|----------|---------|--------------|
-| **01-SETUP-GUIDE.md** | Installation and configuration | First-time setup |
-| **02-ARCHITECTURE.md** | System design and data flow | Understanding internals |
-| **03-DECISION-LOG.md** | Architectural decisions | Making changes |
-| **04-GOTCHAS.md** | Known issues and workarounds | Troubleshooting |
-| **ONBOARDING-CHECKLIST.md** | New developer tasks | Getting started |
+| Document                    | Purpose                        | When to Read            |
+| --------------------------- | ------------------------------ | ----------------------- |
+| **01-SETUP-GUIDE.md**       | Installation and configuration | First-time setup        |
+| **02-ARCHITECTURE.md**      | System design and data flow    | Understanding internals |
+| **03-DECISION-LOG.md**      | Architectural decisions        | Making changes          |
+| **04-GOTCHAS.md**           | Known issues and workarounds   | Troubleshooting         |
+| **ONBOARDING-CHECKLIST.md** | New developer tasks            | Getting started         |
 
 ## 🔑 Key Concepts
 
 ### WebRTC Signaling
+
 The server doesn't relay media - it facilitates **peer-to-peer connections** between clients. The "signaling" process exchanges SDP (Session Description Protocol) offers/answers via WebSocket to establish direct media paths.
 
 ### MediaRelay Pattern
+
 When a sender connects, the server subscribes to their media track using `aiortc.contrib.media.MediaRelay`. This allows **multiple receivers** to subscribe to the same track without the sender needing to know about them.
 
 ### Host Networking
+
 The add-on uses `host_network: true` to bypass Docker's NAT. This is **required** for WebRTC because:
+
 - ICE candidates need real IP addresses
 - UDP hole punching works better without NAT
 - Lower latency (no network translation overhead)
 
 ### SSL Autonomy
+
 The system automatically handles HTTPS certificates through a **cascade strategy**:
+
 1. Use existing Home Assistant certificates (if available)
 2. Use Ingress mode (if behind HA proxy)
 3. Generate self-signed CA (fallback for LAN access)
@@ -119,30 +127,33 @@ The system automatically handles HTTPS certificates through a **cascade strategy
 ## 🎯 Use Cases
 
 ### 1. Two-Way Intercom
+
 - Place a tablet at your front door with `voice-receiving-card`
 - Add `voice-sending-card` to your phone dashboard
 - Click to talk/listen in real-time
 
 ### 2. Baby Monitor
+
 - Old phone in baby's room with `voice-sending-card` (auto_start: true)
 - Your phone with `voice-receiving-card` (auto_play: true)
 - Instant audio when baby cries
 
 ### 3. Media Player Announcements
+
 - Send microphone audio to Home Assistant media players via MP3 stream
 - Broadcast announcements to whole house
 - No need for separate microphone server
 
 ## 📊 Current Status
 
-| Metric | Value |
-|--------|-------|
-| **Version** | 1.1.6 (backend), 1.2.0 (frontend) |
-| **Latency** | <500ms (typical LAN) |
-| **Codec** | Opus (WebRTC), MP3 (HTTP streaming) |
-| **Max Receivers** | Unlimited (MediaRelay fan-out) |
-| **SSL** | Automatic (self-signed or HA certs) |
-| **Network** | Host mode (required) |
+| Metric            | Value                               |
+| ----------------- | ----------------------------------- |
+| **Version**       | 1.1.6 (backend), 1.2.0 (frontend)   |
+| **Latency**       | <500ms (typical LAN)                |
+| **Codec**         | Opus (WebRTC), MP3 (HTTP streaming) |
+| **Max Receivers** | Unlimited (MediaRelay fan-out)      |
+| **SSL**           | Automatic (self-signed or HA certs) |
+| **Network**       | Host mode (required)                |
 
 ## 🆘 Immediate Help
 

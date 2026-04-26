@@ -11,6 +11,7 @@ Welcome to the WebRTC Voice Streaming project! This checklist will guide you thr
 ### Day 1: Environment Setup
 
 #### ☐ Install Prerequisites
+
 - [ ] Python 3.10+ installed (`python3 --version`)
 - [ ] Node.js 20+ installed (`node --version`)
 - [ ] Git configured (`git config --global user.email "you@example.com"`)
@@ -18,18 +19,21 @@ Welcome to the WebRTC Voice Streaming project! This checklist will guide you thr
 - [ ] Home Assistant OS/Supervised (for full integration testing)
 
 #### ☐ Clone Repository
+
 ```bash
-git clone https://github.com/Ahmed9190/webrtc-voice-streaming.git
+git clone https://github.com/KarimTIS/webrtc-voice-streamer.git
 cd webrtc-voice-streaming
 ```
 
 #### ☐ Read Documentation
+
 - [ ] Read `00-README-FIRST.md` (elevator pitch)
 - [ ] Read `01-SETUP-GUIDE.md` (installation)
 - [ ] Skim `02-ARCHITECTURE.md` (system design)
 - [ ] Bookmark `04-GOTCHAS.md` (troubleshooting)
 
 #### ☐ Setup Development Environment
+
 ```bash
 # Backend
 python3 -m venv venv
@@ -48,6 +52,7 @@ cd ..
 ### Day 2: First Run
 
 #### ☐ Start Backend Server
+
 ```bash
 # Development mode (no SSL)
 python webrtc_server_relay.py
@@ -57,18 +62,21 @@ python webrtc_server_relay.py
 ```
 
 #### ☐ Test Health Endpoint
+
 ```bash
 curl http://localhost:8080/health
 # Expected: {"status": "healthy", "webrtc_available": true, ...}
 ```
 
 #### ☐ Test MP3 Stream
+
 ```bash
 curl http://localhost:8081/stream/status
 # Expected: {"active_streams": []}
 ```
 
 #### ☐ Start Frontend Dev Server
+
 ```bash
 cd frontend
 npm run dev
@@ -78,6 +86,7 @@ npm run dev
 ```
 
 #### ☐ Verify Browser Access
+
 - [ ] Open browser to http://localhost:8080
 - [ ] No certificate errors (HTTP, not HTTPS)
 - [ ] Browser console shows no errors
@@ -87,6 +96,7 @@ npm run dev
 ### Day 3: Code Exploration
 
 #### ☐ Trace Request Flow
+
 **Task:** Follow a WebSocket message from client to server
 
 1. Start at `frontend/src/webrtc-manager.ts` line 180 (`sendWebSocketMessage`)
@@ -97,6 +107,7 @@ npm run dev
 **Deliverable:** Draw a diagram showing the message flow
 
 #### ☐ Understand MediaRelay
+
 **Task:** Trace how audio flows from sender to receiver
 
 1. Start at `webrtc_server_relay.py` line 17 (`self.relay = MediaRelay()`)
@@ -107,6 +118,7 @@ npm run dev
 **Deliverable:** Write a 3-sentence explanation of MediaRelay pattern
 
 #### ☐ Explore SSL Cascade
+
 **Task:** Understand certificate generation
 
 1. Read `ssl-setup.sh` from top to bottom
@@ -121,6 +133,7 @@ npm run dev
 ### Day 4: First Code Change
 
 #### ☐ Add Logging Statement
+
 **Task:** Add debug logging to understand message flow
 
 ```python
@@ -134,6 +147,7 @@ async def handle_message(self, connection_id: str, data: dict):
 ```
 
 **Verify:**
+
 ```bash
 # Restart server with debug logging
 export LOG_LEVEL=debug
@@ -144,6 +158,7 @@ python webrtc_server_relay.py
 ```
 
 #### ☐ Change Frontend UI
+
 **Task:** Modify card title color
 
 ```typescript
@@ -159,6 +174,7 @@ python webrtc_server_relay.py
 ```
 
 **Verify:**
+
 ```bash
 cd frontend
 npm run build
@@ -166,6 +182,7 @@ npm run build
 ```
 
 #### ☐ Submit First PR
+
 - [ ] Create branch: `git checkout -b feature/onboarding-change`
 - [ ] Commit changes: `git add -A && git commit -m "feat: add debug logging for message handling"`
 - [ ] Push branch: `git push origin feature/onboarding-change`
@@ -177,6 +194,7 @@ npm run build
 ### Day 5: Testing & Debugging
 
 #### ☐ Test WebRTC Connection
+
 **Task:** Manually test sender → receiver flow
 
 1. Open two browser tabs to http://localhost:8080
@@ -186,11 +204,13 @@ npm run build
 5. Check browser console for errors
 
 **Expected:**
+
 - Tab 1 shows: "connected", audio visualization active
 - Tab 2 shows: "connected", audio playing
 - Server logs show: "Received audio track", "Sent offer to receiver"
 
 #### ☐ Debug a Problem
+
 **Task:** Intentionally break something, then fix it
 
 ```python
@@ -209,6 +229,7 @@ npm run build
 **Learn:** Understanding what breaks teaches you how it works
 
 #### ☐ Run SSL Test Script
+
 ```bash
 cd tests
 bash verify_autossl.sh
@@ -223,9 +244,11 @@ bash verify_autossl.sh
 ### Day 6-7: Architecture Understanding
 
 #### ☐ Draw System Architecture
+
 **Task:** Create your own architecture diagram
 
 Include:
+
 - All major components (VoiceStreamingServer, AudioStreamServer, etc.)
 - Data flow paths (sender → server → receiver)
 - Protocols used (WebSocket, WebRTC, HTTP/MP3)
@@ -234,9 +257,11 @@ Include:
 **Compare:** Your diagram to `02-ARCHITECTURE.md`
 
 #### ☐ Read Decision Log
+
 **Task:** Read `03-DECISION-LOG.md` completely
 
 For each ADR:
+
 - [ ] Understand the problem
 - [ ] Understand the decision
 - [ ] Understand the consequences
@@ -244,6 +269,7 @@ For each ADR:
 **Discussion:** Pick one ADR, write a paragraph arguing for the alternative
 
 #### ☐ Profile Performance
+
 **Task:** Measure server performance
 
 ```bash
@@ -266,14 +292,17 @@ snakeviz profile.stats
 ### Day 8-9: Feature Implementation
 
 #### ☐ Implement Small Feature
+
 **Task:** Add latency display to receiver card
 
 **Requirements:**
+
 - Show current latency in milliseconds
 - Update every second
 - Color-code: green (<50ms), yellow (<150ms), red (>150ms)
 
 **Starting Points:**
+
 - `frontend/src/voice-receiving-card.ts` line 280 (latency state)
 - `frontend/src/voice-receiving-card.ts` line 350 (render method)
 - `frontend/src/webrtc-manager.ts` line 240 (latency calculation)
@@ -281,6 +310,7 @@ snakeviz profile.stats
 **Deliverable:** Working feature, submitted as PR
 
 #### ☐ Write Unit Test
+
 **Task:** Add first unit test for the project
 
 ```python
@@ -297,6 +327,7 @@ def test_server_initialization():
 ```
 
 **Run:**
+
 ```bash
 pip install pytest
 pytest tests/
@@ -307,20 +338,24 @@ pytest tests/
 ### Day 10: Code Review
 
 #### ☐ Review Existing PRs
+
 - [ ] Go to GitHub PRs
 - [ ] Read through open PRs
 - [ ] Leave constructive comments
 - [ ] Ask questions about design decisions
 
 #### ☐ Get Your PR Reviewed
+
 - [ ] Respond to reviewer comments
 - [ ] Make requested changes
 - [ ] Get PR merged
 
 #### ☐ Reflect
+
 **Task:** Write a short reflection (5 minutes)
 
 Questions:
+
 - What was most surprising about the codebase?
 - What was hardest to understand?
 - What would you improve?
@@ -332,7 +367,9 @@ Questions:
 ### Day 11-14: First Major Task
 
 #### ☐ Pick an Issue
+
 **Options:**
+
 - [ ] Add authentication (ADR-P002)
 - [ ] Implement TURN server support (ADR-P001)
 - [ ] Add stream access control (ADR-P003)
@@ -342,32 +379,41 @@ Questions:
 **Or:** Propose your own feature (discuss with maintainer first)
 
 #### ☐ Create Design Doc
+
 **Task:** Write a one-page design
 
 Template:
+
 ```markdown
 # Feature: [Name]
 
 ## Problem
+
 [What problem does this solve?]
 
 ## Proposed Solution
+
 [High-level approach]
 
 ## Implementation Plan
+
 1. [Step 1]
 2. [Step 2]
 3. [Step 3]
 
 ## Risks
+
 [What could go wrong?]
 
 ## Testing
+
 [How will you test it?]
 ```
 
 #### ☐ Implement Feature
+
 **Process:**
+
 1. Create branch: `git checkout -b feature/your-feature`
 2. Implement in small commits
 3. Test frequently
@@ -381,6 +427,7 @@ Template:
 ### ☐ Take Ownership of Module
 
 **Pick One:**
+
 - [ ] Backend signaling server
 - [ ] Frontend cards
 - [ ] SSL/Networking
@@ -388,6 +435,7 @@ Template:
 - [ ] Testing/CI
 
 **Responsibilities:**
+
 - Review PRs in your module
 - Fix bugs in your module
 - Improve documentation for your module
@@ -396,6 +444,7 @@ Template:
 ### ☐ Improve Documentation
 
 **Tasks:**
+
 - [ ] Update outdated sections
 - [ ] Add missing examples
 - [ ] Create video tutorial
@@ -404,6 +453,7 @@ Template:
 ### ☐ Mentor New Developer
 
 **Tasks:**
+
 - [ ] Help new developer with onboarding
 - [ ] Review their first PR
 - [ ] Answer questions
@@ -462,6 +512,7 @@ Template:
 ## Resources
 
 ### Documentation
+
 - [00-README-FIRST.md](./00-README-FIRST.md) - Overview
 - [01-SETUP-GUIDE.md](./01-SETUP-GUIDE.md) - Installation
 - [02-ARCHITECTURE.md](./02-ARCHITECTURE.md) - Deep dive
@@ -469,12 +520,14 @@ Template:
 - [04-GOTCHAS.md](./04-GOTCHAS.md) - Troubleshooting
 
 ### External Resources
+
 - [WebRTC Specification](https://www.w3.org/TR/webrtc/)
 - [aiortc Documentation](https://aiortc.readthedocs.io/)
 - [Lit Framework](https://lit.dev/)
 - [Home Assistant Add-on SDK](https://developers.home-assistant.io/docs/add-ons/)
 
 ### People
+
 - **Maintainer:** Ahmed9190
 - **Channel:** GitHub Issues / Home Assistant Community
 - **Meeting:** [If applicable, add team meeting info]
@@ -484,23 +537,27 @@ Template:
 ## Completion Criteria
 
 ### ☐ Week 1 Complete When:
+
 - [ ] Environment setup working
 - [ ] Can run server locally
 - [ ] Understand basic architecture
 - [ ] Made first code contribution (even if trivial)
 
 ### ☐ Week 2 Complete When:
+
 - [ ] Can trace full request flow
 - [ ] Understand all architectural decisions
 - [ ] Implemented small feature
 - [ ] Wrote first unit test
 
 ### ☐ Week 3 Complete When:
+
 - [ ] Working on major feature
 - [ ] Comfortable with codebase
 - [ ] Can debug issues independently
 
 ### ☐ Month 3 Complete When:
+
 - [ ] Own a module
 - [ ] Can review others' code
 - [ ] Contributing regularly

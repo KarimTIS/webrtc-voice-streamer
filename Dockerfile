@@ -13,7 +13,7 @@ FROM $BUILD_FROM
 
 # Install dependencies
 RUN apk update && \
-    apk add --no-cache python3 py3-pip curl openssl jq netcat-openbsd bash
+    apk add --no-cache python3 py3-pip curl openssl ca-certificates jq netcat-openbsd bash
 
 # Set working directory to /app
 WORKDIR /app

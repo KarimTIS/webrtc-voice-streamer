@@ -9,10 +9,10 @@ This system implements a **signaling server** architecture for WebRTC-based real
 ```
 ┌─────────────────────────────────────────────────────────────────────┐
 │                         Client Layer                                │
-│  ┌─────────────────┐  ┌─────────────────┐  ┌─────────────────┐     │
-│  │ Voice Sending   │  │ Voice Receiving │  │ Home Assistant  │     │
-│  │ Card (Sender)   │  │ Card (Receiver) │  │ Media Player    │     │
-│  └────────┬────────┘  └────────┬────────┘  └────────┬────────┘     │
+│  ┌─────────────────┐  ┌─────────────────┐  ┌─────────────────┐      │
+│  │ Voice Sending   │  │ Voice Receiving │  │ Home Assistant  │      │
+│  │ Card (Sender)   │  │ Card (Receiver) │  │ Media Player    │      │
+│  └────────┬────────┘  └────────┬────────┘  └────────┬────────┘      │
 │           │                    │                    │               │
 │           │ WebSocket (WSS)    │ HTTP (MP3)         │ HTTP (MP3)    │
 │           │ WebRTC (UDP)       │                    │               │
@@ -22,7 +22,7 @@ This system implements a **signaling server** architecture for WebRTC-based real
 ┌─────────────────────────────────────────────────────────────────────┐
 │                      Signaling Layer                                │
 │  ┌───────────────────────────────────────────────────────────────┐  │
-│  │              VoiceStreamingServer                              │  │
+│  │              VoiceStreamingServer                             │  │
 │  │  ┌─────────────────────────────────────────────────────────┐  │  │
 │  │  │  WebSocket Handler (/ws)                                │  │  │
 │  │  │  - Connection lifecycle management                      │  │  │
@@ -42,8 +42,8 @@ This system implements a **signaling server** architecture for WebRTC-based real
 │  │  │  - Visualization data extraction                        │  │  │
 │  │  └─────────────────────────────────────────────────────────┘  │  │
 │  └───────────────────────────────────────────────────────────────┘  │
-│                               │                                      │
-│                               ▼                                      │
+│                               │                                     │
+│                               ▼                                     │
 │  ┌───────────────────────────────────────────────────────────────┐  │
 │  │              AudioStreamServer (Port 8081)                    │  │
 │  │  - MP3 encoding via PyAV                                      │  │

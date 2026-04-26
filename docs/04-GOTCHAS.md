@@ -9,6 +9,7 @@
 **Cause:** Browsers block microphone access on non-HTTPS pages (Chrome, Firefox, Safari all enforce this)
 
 **Solution:**
+
 ```bash
 # Ensure SSL is enabled
 # Check logs for: "SSL enabled using certificates from..."
@@ -21,6 +22,7 @@
 ```
 
 **Workaround for Development:**
+
 ```bash
 # Chrome: Allow microphone on localhost
 chrome://flags/#unsafely-treat-insecure-origin-as-secure
@@ -38,12 +40,14 @@ chrome://flags/#unsafely-treat-insecure-origin-as-secure
 **Cause:** Docker bridge NAT prevents proper ICE candidate exchange
 
 **Solution:**
+
 ```yaml
 # config.yaml - DO NOT disable host_network
-host_network: true  # Required!
+host_network: true # Required!
 ```
 
 **If You Must Use Bridge Mode:**
+
 ```bash
 # Expose all ports explicitly
 ports:
@@ -63,6 +67,7 @@ ports:
 **Cause:** Smart port hunting finds alternative if 8443 busy
 
 **Solution:**
+
 ```bash
 # Check actual port in logs:
 # Look for: "✅ Server successfully started on https://0.0.0.0:8444"
@@ -76,6 +81,7 @@ server_url: "homeassistant.local:8444"
 ```
 
 **Prevention:**
+
 ```bash
 # Check what's using port 8443:
 netstat -tlnp | grep 8443
@@ -96,6 +102,7 @@ lsof -i :8443
 **Cause:** Browsers block autoplay without user interaction
 
 **Solution:**
+
 ```typescript
 // User must interact with page first (click anywhere)
 // Then audio will play
@@ -106,11 +113,16 @@ auto_play: false  # Require manual start
 ```
 
 **Workaround:**
+
 ```javascript
 // Add click handler to enable audio
-document.body.addEventListener('click', () => {
-  audioElement.play().catch(console.error);
-}, { once: true });
+document.body.addEventListener(
+  "click",
+  () => {
+    audioElement.play().catch(console.error);
+  },
+  { once: true },
+);
 ```
 
 **Location:** `frontend/src/voice-receiving-card.ts` lines 230-250
@@ -124,6 +136,7 @@ document.body.addEventListener('click', () => {
 **Cause:** Self-signed certificates expire without warning
 
 **Solution:**
+
 ```bash
 # Check certificate expiry:
 openssl x509 -in /data/ssl/server.crt -noout -dates
@@ -135,6 +148,7 @@ rm /data/ssl/*
 ```
 
 **Prevention:**
+
 ```bash
 # Add monitoring (Home Assistant sensor)
 sensor:
@@ -157,6 +171,7 @@ sensor:
 **Cause:** Lovelace resource not registered or path incorrect
 
 **Solution:**
+
 ```bash
 # Check if file exists:
 ls -la /config/www/voice_streaming_backend/dist/
@@ -171,6 +186,7 @@ type: module
 ```
 
 **Debug:**
+
 ```bash
 # Check frontend was copied:
 docker exec <addon_container> ls -la /app/frontend/dist/
@@ -190,6 +206,7 @@ docker exec <addon_container> chmod -R 755 /config/www/voice_streaming_backend/
 **Cause:** SSL certificate mismatch or wrong port
 
 **Solution:**
+
 ```bash
 # Verify server is running:
 curl -k https://<IP>:8443/health
@@ -218,6 +235,7 @@ ws.onerror = (e) => console.error("Error:", e);
 **Cause:** MediaRelay track subscription failed or receiver ICE connection failed
 
 **Solution:**
+
 ```bash
 # Check server logs for:
 # "Received audio track from sender" (good)
@@ -234,6 +252,7 @@ ws.onerror = (e) => console.error("Error:", e);
 ```
 
 **Debug:**
+
 ```python
 # Add logging to webrtc_server_relay.py
 async def setup_receiver(self, connection_id: str, stream_id: str):
@@ -253,6 +272,7 @@ async def setup_receiver(self, connection_id: str, stream_id: str):
 **Cause:** No active streams (sender not connected)
 
 **Solution:**
+
 ```bash
 # Start a sender first:
 # 1. Add voice-sending-card to dashboard
@@ -269,6 +289,7 @@ curl http://<IP>:8081/stream/status
 ```
 
 **Workaround:**
+
 ```yaml
 # Use HTML page instead (shows waiting screen)
 # Visit: http://<IP>:8081/stream/latest.mp3 in browser
@@ -286,6 +307,7 @@ curl http://<IP>:8081/stream/status
 **Cause:** Multiple active streams or MP3 encoding overhead
 
 **Solution:**
+
 ```bash
 # Check active streams:
 curl -k https://<IP>:8443/metrics
@@ -300,6 +322,7 @@ curl -k https://<IP>:8443/metrics
 ```
 
 **Optimization:**
+
 ```python
 # Reduce MP3 bitrate (audio_stream_server.py)
 codec_context.bit_rate = 64000  # Was 128000
@@ -317,6 +340,7 @@ codec_context.sample_rate = 22050  # Was 44100
 **Cause:** Cleanup task runs every 5 minutes, streams may linger
 
 **Solution:**
+
 ```bash
 # Force cleanup:
 # Restart add-on (clears all streams)
@@ -328,6 +352,7 @@ watch -n 1 'curl -k https://<IP>:8443/metrics | jq .active_streams'
 ```
 
 **Manual Cleanup:**
+
 ```python
 # Add debug endpoint (webrtc_server_relay.py)
 async def cleanup_handler(self, request):
@@ -348,10 +373,12 @@ async def cleanup_handler(self, request):
 **Impact:** Safari users can't send/receive audio reliably
 
 **Symptoms:**
+
 - Safari 15+: Microphone access works but no audio transmitted
 - Safari 16+: Audio works but visualization broken
 
 **Workaround:**
+
 ```typescript
 // Use different audio constraints for Safari
 // frontend/src/webrtc-manager.ts
@@ -361,7 +388,7 @@ const audioConstraints = {
     echoCancellation: true,
     noiseSuppression: true,
     autoGainControl: true,
-    sampleRate: isSafari ? 48000 : 16000,  // Safari prefers 48kHz
+    sampleRate: isSafari ? 48000 : 16000, // Safari prefers 48kHz
     channelCount: isSafari ? 1 : 1,
   },
 };
@@ -377,10 +404,12 @@ const audioConstraints = {
 **Impact:** Android Chrome requires user interaction for audio playback
 
 **Symptoms:**
+
 - Audio plays on desktop but not Android
 - Console shows "play() failed because the user didn't interact"
 
 **Workaround:**
+
 ```typescript
 // Add explicit user interaction handler
 // frontend/src/voice-receiving-card.ts
@@ -403,10 +432,12 @@ firstUpdated() {
 **Impact:** Memory usage grows over days/weeks
 
 **Symptoms:**
+
 - Server memory usage increases by ~10MB per day
 - Restart temporarily fixes issue
 
 **Workaround:**
+
 ```bash
 # Schedule automatic restarts:
 # Home Assistant → Supervisor → Add-on → Restart
@@ -414,6 +445,7 @@ firstUpdated() {
 ```
 
 **Investigation:**
+
 ```python
 # Add memory profiling
 import tracemalloc
@@ -440,6 +472,7 @@ async def log_memory():
 **Risk:** Privacy breach if malicious actor on network
 
 **Mitigation:**
+
 ```bash
 # Network segmentation (VLAN for IoT devices)
 # Firewall rules (restrict access to trusted IPs)
@@ -447,6 +480,7 @@ async def log_memory():
 ```
 
 **Do NOT:**
+
 - Expose port 8443 to internet
 - Use on guest WiFi without isolation
 - Allow untrusted devices on LAN
@@ -460,6 +494,7 @@ async def log_memory():
 **Risk:** DoS attack possible (even from LAN)
 
 **Mitigation:**
+
 ```python
 # Add connection limit (webrtc_server_relay.py)
 MAX_CONNECTIONS = 50
@@ -469,6 +504,7 @@ if len(self.connections) > MAX_CONNECTIONS:
 ```
 
 **Monitoring:**
+
 ```bash
 # Alert on high connection count
 curl -k https://<IP>:8443/metrics | jq .active_connections
@@ -484,6 +520,7 @@ curl -k https://<IP>:8443/metrics | jq .active_connections
 **Risk:** Users may skip CA installation, exposing to MITM
 
 **Mitigation:**
+
 ```bash
 # Educate users on CA installation importance
 # Provide clear instructions (see SETUP-GUIDE.md)
@@ -498,10 +535,11 @@ curl -k https://<IP>:8443/metrics | jq .active_connections
 
 ```yaml
 # Add-on configuration
-log_level: trace  # Most verbose
+log_level: trace # Most verbose
 ```
 
 **What You'll See:**
+
 ```
 2024-03-17 10:00:00 - webrtc_server_relay - DEBUG - Handling message start_sending for uuid
 2024-03-17 10:00:00 - webrtc_server_relay - DEBUG - Setting up sender for uuid
@@ -516,22 +554,22 @@ log_level: trace  # Most verbose
 
 ```javascript
 // Enable verbose logging
-localStorage.setItem('debug', 'webrtc:*');
+localStorage.setItem("debug", "webrtc:*");
 
 // Inspect WebRTC internals
 pc = new RTCPeerConnection();
-pc.getStats().then(stats => {
-  stats.forEach(report => {
-    if (report.type === 'inbound-rtp') {
-      console.log('Packets received:', report.packetsReceived);
+pc.getStats().then((stats) => {
+  stats.forEach((report) => {
+    if (report.type === "inbound-rtp") {
+      console.log("Packets received:", report.packetsReceived);
     }
   });
 });
 
 // Monitor WebSocket
 const originalSend = WebSocket.prototype.send;
-WebSocket.prototype.send = function(data) {
-  console.log('WS Send:', data);
+WebSocket.prototype.send = function (data) {
+  console.log("WS Send:", data);
   return originalSend.call(this, data);
 };
 ```
@@ -637,22 +675,25 @@ type: module
 ### Information to Provide
 
 1. **Server Logs:**
+
    ```bash
    # Home Assistant → Add-ons → Voice Streaming Backend → Logs
    # Copy last 50 lines
    ```
 
 2. **Browser Console:**
+
    ```javascript
    // F12 → Console
    // Copy errors (red text)
    ```
 
 3. **Network Information:**
+
    ```bash
    # Server IP:
    hostname -I
-   
+
    # Browser:
    # Visit: https://<IP>:8443/health
    # Screenshot response
@@ -666,7 +707,7 @@ type: module
 
 ### Common Support Channels
 
-- **GitHub Issues:** https://github.com/Ahmed9190/webrtc-voice-streaming/issues
+- **GitHub Issues:** https://github.com/KarimTIS/webrtc-voice-streamer/issues
 - **Home Assistant Community:** https://community.home-assistant.io/
 - **Discord:** Home Assistant Discord server
 

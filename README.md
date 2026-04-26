@@ -36,7 +36,7 @@ graph TD
 
 1.  Navigate to **Settings** > **Add-ons** > **Add-on Store**.
 2.  Click the **dots** (top-right) > **Repositories**.
-3.  Add `https://github.com/Ahmed9190/webrtc-voice-streaming`.
+3.  Add `https://github.com/KarimTIS/webrtc-voice-streamer`.
 4.  Find **"Voice Streaming Backend"** and click **Install**.
 5.  Start the Add-on.
 

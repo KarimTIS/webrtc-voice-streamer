@@ -13,29 +13,29 @@
 
 ### Core Documentation (7 files)
 
-| File | Purpose | Size |
-|------|---------|------|
-| **00-README-FIRST.md** | Elevator pitch & quick start | 8 KB |
-| **01-SETUP-GUIDE.md** | Installation & configuration | 15 KB |
-| **02-ARCHITECTURE.md** | System design & data flow | 25 KB |
-| **03-DECISION-LOG.md** | Architectural decisions (14 ADRs) | 30 KB |
-| **04-GOTCHAS.md** | Known issues & troubleshooting | 20 KB |
-| **05-BUILD-RELEASE.md** | Build, version & release procedures | 8 KB |
-| **ONBOARDING-CHECKLIST.md** | New developer 3-week plan | 18 KB |
+| File                        | Purpose                             | Size  |
+| --------------------------- | ----------------------------------- | ----- |
+| **00-README-FIRST.md**      | Elevator pitch & quick start        | 8 KB  |
+| **01-SETUP-GUIDE.md**       | Installation & configuration        | 15 KB |
+| **02-ARCHITECTURE.md**      | System design & data flow           | 25 KB |
+| **03-DECISION-LOG.md**      | Architectural decisions (14 ADRs)   | 30 KB |
+| **04-GOTCHAS.md**           | Known issues & troubleshooting      | 20 KB |
+| **05-BUILD-RELEASE.md**     | Build, version & release procedures | 8 KB  |
+| **ONBOARDING-CHECKLIST.md** | New developer 3-week plan           | 18 KB |
 
 ### Internal Artifacts (2 files)
 
-| File | Purpose |
-|------|---------|
-| **architecture-map.md** | System boundary & component map |
+| File                               | Purpose                           |
+| ---------------------------------- | --------------------------------- |
+| **architecture-map.md**            | System boundary & component map   |
 | **internal/dependency-graph.json** | Machine-readable dependency graph |
 
 ### State & Context (2 files)
 
-| File | Purpose |
-|------|---------|
-| **.state/webrtc_backend-state.json** | Analysis state (for recovery) |
-| **.context/webrtc-backend-context.md** | Discovery log & insights |
+| File                                   | Purpose                       |
+| -------------------------------------- | ----------------------------- |
+| **.state/webrtc_backend-state.json**   | Analysis state (for recovery) |
+| **.context/webrtc-backend-context.md** | Discovery log & insights      |
 
 **Total Documentation:** 124 KB across 11 files
 
@@ -45,25 +45,25 @@
 
 ### Codebase Metrics
 
-| Metric | Value |
-|--------|-------|
+| Metric                  | Value  |
+| ----------------------- | ------ |
 | **Total Lines of Code** | ~2,500 |
-| **Python Files** | 4 |
-| **TypeScript Files** | 8 |
-| **Shell Scripts** | 2 |
-| **Configuration Files** | 6 |
-| **Test Files** | 1 |
+| **Python Files**        | 4      |
+| **TypeScript Files**    | 8      |
+| **Shell Scripts**       | 2      |
+| **Configuration Files** | 6      |
+| **Test Files**          | 1      |
 
 ### Complexity Analysis
 
-| Component | Complexity | Test Coverage |
-|-----------|------------|---------------|
-| VoiceStreamingServer | High | 0% ⚠️ |
-| WebRTCManager | High | 0% ⚠️ |
-| AudioStreamServer | Medium | 0% ⚠️ |
-| VoiceSendingCard | Medium | 0% ⚠️ |
-| VoiceReceivingCard | High | 0% ⚠️ |
-| SSL Setup | Medium | Partial ✅ |
+| Component            | Complexity | Test Coverage |
+| -------------------- | ---------- | ------------- |
+| VoiceStreamingServer | High       | 0% ⚠️         |
+| WebRTCManager        | High       | 0% ⚠️         |
+| AudioStreamServer    | Medium     | 0% ⚠️         |
+| VoiceSendingCard     | Medium     | 0% ⚠️         |
+| VoiceReceivingCard   | High       | 0% ⚠️         |
+| SSL Setup            | Medium     | Partial ✅    |
 
 ### Dependencies Identified
 
@@ -100,6 +100,7 @@
 ### Key Decisions Captured
 
 15 Architectural Decision Records (ADRs) documented:
+
 - ADR-001: WebRTC over WebSocket audio
 - ADR-002: Host network mode
 - ADR-003: LAN-only ICE (no STUN/TURN)
@@ -143,18 +144,21 @@
 ## 🎯 Onboarding Path
 
 ### Week 1: Setup & Orientation
+
 - Environment setup (Python + Node.js)
 - First server run
 - Code exploration
 - First code change
 
 ### Week 2: Deep Dive
+
 - Architecture understanding
 - Feature implementation
 - Unit test writing
 - Code review participation
 
 ### Week 3: Contribution
+
 - Major feature development
 - Module ownership
 - Documentation improvement
@@ -236,7 +240,7 @@
 
 ### Getting Help
 
-- **GitHub Issues:** https://github.com/Ahmed9190/webrtc-voice-streaming/issues
+- **GitHub Issues:** https://github.com/KarimTIS/webrtc-voice-streamer/issues
 - **Home Assistant Community:** https://community.home-assistant.io/
 - **Documentation:** See `.handover/` directory
 
@@ -262,7 +266,7 @@
 ✅ Autonomous operation (zero-configuration SSL)  
 ✅ Good performance (<500ms latency)  
 ✅ Active maintenance (regular updates)  
-✅ Comprehensive documentation (now)  
+✅ Comprehensive documentation (now)
 
 ### Areas for Improvement
 
@@ -270,7 +274,7 @@
 ⚠️ Browser compatibility (Safari issues)  
 ⚠️ Security (no authentication)  
 ⚠️ Memory management (potential leak)  
-⚠️ Monitoring (no observability)  
+⚠️ Monitoring (no observability)
 
 ### Overall Assessment
 
@@ -312,7 +316,7 @@ This handover package provides:
 
 ---
 
-*Generated by ESEHP-ASKS-v2.0 (Elite Staff Engineer Handover Protocol)*  
-*Analysis Duration: 40 minutes*  
-*Files Analyzed: 21*  
-*Documentation Generated: 10 files*
+_Generated by ESEHP-ASKS-v2.0 (Elite Staff Engineer Handover Protocol)_  
+_Analysis Duration: 40 minutes_  
+_Files Analyzed: 21_  
+_Documentation Generated: 10 files_

@@ -7,6 +7,7 @@ Choose one of the following installation methods:
 ### Path A: Home Assistant Add-on (Recommended)
 
 **Prerequisites:**
+
 - Home Assistant OS or Supervised installation
 - Access to Add-on Store
 - SSL certificate (optional - auto-generated if missing)
@@ -14,13 +15,15 @@ Choose one of the following installation methods:
 **Steps:**
 
 1. **Add Repository to Home Assistant**
+
    ```
    Settings → Add-ons → Add-on Store → ⋮ (menu) → Repositories
-   URL: https://github.com/Ahmed9190/webrtc-voice-streaming
+   URL: https://github.com/KarimTIS/webrtc-voice-streamer
    Click "Add"
    ```
 
 2. **Install Add-on**
+
    ```
    Add-on Store → Search "Voice Streaming Backend"
    Click "Install"
@@ -28,24 +31,27 @@ Choose one of the following installation methods:
    ```
 
 3. **Configure Add-on**
+
    ```yaml
    # Configuration tab
-   log_level: info          # trace|debug|info|warning|error
-   audio_port: 8081         # Port for MP3 streaming
+   log_level: info # trace|debug|info|warning|error
+   audio_port: 8081 # Port for MP3 streaming
    ```
 
 4. **Start Add-on**
+
    ```
    Click "Start"
    Wait for "✅ Server successfully started" in logs
    ```
 
 5. **Install Frontend Cards**
+
    ```
    The add-on automatically:
    - Copies frontend files to /config/www/voice_streaming_backend/
    - Registers Lovelace resource via Supervisor API
-   
+
    Verify: Settings → Dashboards → Resources
    Look for: /local/voice_streaming_backend/dist/voice-streaming-card-dashboard.js
    ```
@@ -60,6 +66,7 @@ Choose one of the following installation methods:
 ### Path B: Docker (Development)
 
 **Prerequisites:**
+
 - Docker installed
 - Port 8443 and 8081 available
 - SSL certificates (optional)
@@ -68,7 +75,7 @@ Choose one of the following installation methods:
 
 ```bash
 # 1. Clone repository
-git clone https://github.com/Ahmed9190/webrtc-voice-streaming.git
+git clone https://github.com/KarimTIS/webrtc-voice-streamer.git
 cd webrtc-voice-streaming
 
 # 2. Build Docker image
@@ -95,6 +102,7 @@ docker logs -f webrtc-backend
 ### Path C: Local Development (Python + Node)
 
 **Prerequisites:**
+
 - Python 3.10+
 - Node.js 20+
 - Git
@@ -103,7 +111,7 @@ docker logs -f webrtc-backend
 
 ```bash
 # 1. Clone repository
-git clone https://github.com/Ahmed9190/webrtc-voice-streaming.git
+git clone https://github.com/KarimTIS/webrtc-voice-streamer.git
 cd webrtc-voice-streaming
 
 # 2. Build frontend
@@ -146,6 +154,7 @@ The add-on automatically handles SSL through a **cascade strategy**:
 3. **Self-Signed**: Generates local CA and server certificate
 
 **For self-signed mode:**
+
 ```
 1. Start add-on
 2. Visit https://<IP>:8443 (accept certificate warning)
@@ -157,6 +166,7 @@ The add-on automatically handles SSL through a **cascade strategy**:
 ### Option 2: Manual SSL
 
 **Using Let's Encrypt certificates:**
+
 ```bash
 # Copy certificates to Home Assistant SSL directory
 cp /etc/letsencrypt/live/your-domain/fullchain.pem /ssl/fullchain.pem
@@ -166,6 +176,7 @@ cp /etc/letsencrypt/live/your-domain/privkey.pem /ssl/privkey.pem
 ```
 
 **Using custom certificates:**
+
 ```bash
 # Place certificates in /ssl directory
 cp your-cert.pem /ssl/fullchain.pem
@@ -177,6 +188,7 @@ cp your-key.pem /ssl/privkey.pem
 ### CA Certificate Installation
 
 **iPhone/iPad:**
+
 ```
 1. Download ha-webrtc-ca.crt from https://<IP>:8443/ca.crt
 2. Open downloaded file
@@ -186,6 +198,7 @@ cp your-key.pem /ssl/privkey.pem
 ```
 
 **Android:**
+
 ```
 1. Download ha-webrtc-ca.crt
 2. Open downloaded file
@@ -195,6 +208,7 @@ cp your-key.pem /ssl/privkey.pem
 ```
 
 **Windows:**
+
 ```
 1. Download ha-webrtc-ca.crt
 2. Double-click certificate
@@ -204,6 +218,7 @@ cp your-key.pem /ssl/privkey.pem
 ```
 
 **Mac:**
+
 ```
 1. Download ha-webrtc-ca.crt
 2. Double-click to open in Keychain Access
@@ -214,6 +229,7 @@ cp your-key.pem /ssl/privkey.pem
 ```
 
 **Linux:**
+
 ```bash
 sudo cp ha-webrtc-ca.crt /usr/local/share/ca-certificates/
 sudo update-ca-certificates
@@ -225,50 +241,53 @@ sudo update-ca-certificates
 
 ```yaml
 # config.yaml (Add-on configuration)
-log_level: info          # Verbosity: trace, debug, info, warning, error
-audio_port: 8081         # Port for MP3 streaming server
+log_level: info # Verbosity: trace, debug, info, warning, error
+audio_port: 8081 # Port for MP3 streaming server
 ```
 
 ### Card Configuration
 
 **Voice Sending Card:**
+
 ```yaml
 type: custom:voice-sending-card
 title: "Microphone"
-name: "Front Door Mic"           # Alternative title
-server_url: "homeassistant.local:8443"  # Optional, auto-discovers
-auto_start: false                # Start sending on card load
-noise_suppression: true          # Enable noise suppression
-echo_cancellation: true          # Enable echo cancellation
-auto_gain_control: true          # Enable automatic gain control
-target_media_player: media_player.living_room_speaker  # Optional
-stream_url: "http://homeassistant.local:8081/stream/latest.mp3"  # Optional
+name: "Front Door Mic" # Alternative title
+server_url: "homeassistant.local:8443" # Optional, auto-discovers
+auto_start: false # Start sending on card load
+noise_suppression: true # Enable noise suppression
+echo_cancellation: true # Enable echo cancellation
+auto_gain_control: true # Enable automatic gain control
+target_media_player: media_player.living_room_speaker # Optional
+stream_url: "http://homeassistant.local:8081/stream/latest.mp3" # Optional
 ```
 
 **Voice Receiving Card:**
+
 ```yaml
 type: custom:voice-receiving-card
 title: "Speaker"
-name: "Living Room Speaker"      # Alternative title
-server_url: "homeassistant.local:8443"  # Optional, auto-discovers
-auto_play: true                  # Auto-play when stream available
+name: "Living Room Speaker" # Alternative title
+server_url: "homeassistant.local:8443" # Optional, auto-discovers
+auto_play: true # Auto-play when stream available
 ```
 
 ### Advanced Configuration
 
 **Multiple Streams:**
+
 ```yaml
 # Multiple sending cards can coexist
 - type: custom:voice-sending-card
   title: "Front Door Mic"
-  
+
 - type: custom:voice-sending-card
   title: "Backyard Mic"
-  
+
 # Multiple receiving cards can select different streams
 - type: custom:voice-receiving-card
   title: "Kitchen Speaker"
-  
+
 - type: custom:voice-receiving-card
   title: "Bedroom Speaker"
 ```
@@ -335,6 +354,7 @@ cat /config/www/voice_streaming_backend/server_state.json
 ### 5. Test WebRTC Connection
 
 **Browser Console Test:**
+
 ```javascript
 // Open browser console (F12)
 // Create WebRTC manager
@@ -356,6 +376,7 @@ manager.startSending().catch(console.error);
 **Symptom:** Logs show "Address in use" or "Port busy"
 
 **Solution:**
+
 ```
 1. Server automatically hunts for available port
 2. Check logs for actual port: "✅ Server successfully started on https://0.0.0.0:8444"
@@ -366,6 +387,7 @@ manager.startSending().catch(console.error);
 **Symptom:** "SSL certificate not found"
 
 **Solution:**
+
 ```
 1. Server falls back to self-signed mode
 2. Visit https://<IP>:8443 and accept certificate warning
@@ -378,6 +400,7 @@ manager.startSending().catch(console.error);
 **Symptom:** Card shows "disconnected" or "connecting..."
 
 **Solution:**
+
 ```
 1. Check server_state.json: cat /config/www/voice_streaming_backend/server_state.json
 2. Verify server_url in card config matches active_port
@@ -388,6 +411,7 @@ manager.startSending().catch(console.error);
 **Symptom:** "WebSocket connection failed"
 
 **Solution:**
+
 ```
 1. Verify server is running: curl -k https://<IP>:8443/health
 2. Check SSL certificate is valid
@@ -400,6 +424,7 @@ manager.startSending().catch(console.error);
 **Symptom:** Card shows "connected" but no audio plays
 
 **Solution:**
+
 ```
 1. Browser requires user interaction - click anywhere on page
 2. Check browser autoplay policy: chrome://settings/content/sound
@@ -410,6 +435,7 @@ manager.startSending().catch(console.error);
 **Symptom:** Microphone not working
 
 **Solution:**
+
 ```
 1. Browser requires HTTPS for microphone access
 2. Check SSL certificate is valid
@@ -422,6 +448,7 @@ manager.startSending().catch(console.error);
 **Symptom:** Browser shows "Your connection is not private"
 
 **Solution:**
+
 ```
 1. Download CA from https://<IP>:8443/ca.crt
 2. Install CA on device (see CA Installation section)
@@ -432,6 +459,7 @@ manager.startSending().catch(console.error);
 **Symptom:** "Certificate has expired"
 
 **Solution:**
+
 ```
 1. Server certificates valid for 825 days
 2. CA certificate valid for 10 years
@@ -450,6 +478,7 @@ After successful installation:
 5. **Set up automations** - Trigger cards based on events (doorbell, etc.)
 
 **Advanced Topics:**
+
 - Read [02-ARCHITECTURE.md](./02-ARCHITECTURE.md) for system internals
 - Read [03-DECISION-LOG.md](./03-DECISION-LOG.md) for design rationale
 - Read [04-GOTCHAS.md](./04-GOTCHAS.md) for known issues

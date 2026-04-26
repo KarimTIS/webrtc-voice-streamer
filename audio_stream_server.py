@@ -5,6 +5,7 @@ import os
 
 import av
 from aiohttp import web
+from license_middleware import license_middleware
 
 logger = logging.getLogger(__name__)
 
@@ -12,7 +13,7 @@ logger = logging.getLogger(__name__)
 class AudioStreamServer:
     def __init__(self, relay_server):
         self.relay_server = relay_server
-        self.app = web.Application()
+        self.app = web.Application(middlewares=[license_middleware])
         self.app.router.add_get("/health", self.health_check)
         self.app.router.add_get("/stream/latest.mp3", self.latest_stream_handler)
         self.app.router.add_get("/stream/{stream_id}.mp3", self.stream_handler)
