@@ -2,6 +2,17 @@ import { LitElement, html, css, TemplateResult } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
 import { HomeAssistant, VoiceStreamingCardConfig } from "./types";
 
+const SCHEMA = [
+  { name: "title", selector: { text: {} } },
+  { name: "server_url", selector: { text: {} } },
+  { name: "stream_url", selector: { text: {} } },
+  { name: "target_media_player", selector: { entity: { domain: "media_player" } } },
+  { name: "auto_start", selector: { boolean: {} } },
+  { name: "noise_suppression", selector: { boolean: {} } },
+  { name: "echo_cancellation", selector: { boolean: {} } },
+  { name: "auto_gain_control", selector: { boolean: {} } },
+];
+
 @customElement("voice-sending-card-editor")
 export class VoiceSendingCardEditor extends LitElement {
   @property({ attribute: false }) public hass!: HomeAssistant;
@@ -11,30 +22,37 @@ export class VoiceSendingCardEditor extends LitElement {
     this._config = config;
   }
 
-  private _valueChanged(ev: any): void {
+  private _computeLabel = (schema: any): string => {
+    switch (schema.name) {
+      case "title": return "Title";
+      case "server_url": return "Server URL (optional)";
+      case "stream_url": return "Audio Stream URL (optional)";
+      case "target_media_player": return "Target Media Player (optional)";
+      case "auto_start": return "Auto Start";
+      case "noise_suppression": return "Noise Suppression";
+      case "echo_cancellation": return "Echo Cancellation";
+      case "auto_gain_control": return "Auto Gain Control";
+      default: return schema.name;
+    }
+  };
+
+  private _computeHelper = (schema: any): string => {
+    switch (schema.name) {
+      case "server_url": return "WebRTC Server (WS) e.g. localhost:8080/ws";
+      case "stream_url": return "Audio playback URL e.g. http://192.168.1.10:8081/stream/latest.mp3";
+      case "target_media_player": return "Entity ID e.g. media_player.living_room_speaker";
+      default: return "";
+    }
+  };
+
+  private _valueChanged(ev: CustomEvent): void {
     if (!this._config || !this.hass) {
       return;
     }
-    const target = ev.target;
-    const configValue = target.configValue;
-
-    if (!configValue) {
+    if (this._config === ev.detail.value) {
       return;
     }
-
-    const value = target.checked !== undefined ? target.checked : target.value;
-
-    if (this._config[configValue] === value) {
-      return;
-    }
-
-    const newConfig = { ...this._config };
-    if (value === "" && target.checked === undefined) {
-      delete newConfig[configValue];
-    } else {
-      newConfig[configValue] = value;
-    }
-    this._config = newConfig;
+    this._config = ev.detail.value;
     this.dispatchEvent(new CustomEvent("config-changed", { detail: { config: this._config }, bubbles: true, composed: true }));
   }
 
@@ -44,65 +62,21 @@ export class VoiceSendingCardEditor extends LitElement {
     }
 
     return html`
-      <div class="card-config">
-        <ha-textfield label="Title" .value=${this._config.title || ""} .configValue=${"title"} @input=${this._valueChanged}></ha-textfield>
-        <ha-textfield
-          label="Server URL (optional)"
-          .value=${this._config.server_url || ""}
-          .configValue=${"server_url"}
-          helper="WebRTC Server (WS) e.g. localhost:8080/ws"
-          @input=${this._valueChanged}
-        ></ha-textfield>
-        <ha-textfield
-          label="Audio Stream URL (optional)"
-          .value=${this._config.stream_url || ""}
-          .configValue=${"stream_url"}
-          helper="Audio playback URL e.g. http://192.168.1.10:8081/stream/latest.mp3"
-          @input=${this._valueChanged}
-        ></ha-textfield>
-        <ha-textfield
-          label="Target Media Player (optional)"
-          .value=${this._config.target_media_player || ""}
-          .configValue=${"target_media_player"}
-          helper="Entity ID e.g. media_player.living_room_speaker"
-          @input=${this._valueChanged}
-        ></ha-textfield>
-        <div class="side-by-side">
-          <ha-formfield label="Auto Start">
-            <ha-switch .checked=${this._config.auto_start !== false} .configValue=${"auto_start"} @change=${this._valueChanged}></ha-switch>
-          </ha-formfield>
-          <ha-formfield label="Noise Suppression">
-            <ha-switch .checked=${this._config.noise_suppression !== false} .configValue=${"noise_suppression"} @change=${this._valueChanged}></ha-switch>
-          </ha-formfield>
-        </div>
-        <div class="side-by-side">
-          <ha-formfield label="Echo Cancellation">
-            <ha-switch .checked=${this._config.echo_cancellation !== false} .configValue=${"echo_cancellation"} @change=${this._valueChanged}></ha-switch>
-          </ha-formfield>
-          <ha-formfield label="Auto Gain Control">
-            <ha-switch .checked=${this._config.auto_gain_control !== false} .configValue=${"auto_gain_control"} @change=${this._valueChanged}></ha-switch>
-          </ha-formfield>
-        </div>
-      </div>
+      <ha-form
+        .hass=${this.hass}
+        .data=${this._config}
+        .schema=${SCHEMA}
+        .computeLabel=${this._computeLabel}
+        .computeHelper=${this._computeHelper}
+        @value-changed=${this._valueChanged}
+      ></ha-form>
     `;
   }
 
   static styles = css`
-    .card-config {
-      display: flex;
-      flex-direction: column;
-      gap: 16px;
-    }
-    .side-by-side {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 16px;
-    }
-    ha-textfield {
-      width: 100%;
-    }
-    ha-formfield {
-      padding-bottom: 8px;
+    ha-form {
+      display: block;
+      margin-bottom: 16px;
     }
   `;
 }
