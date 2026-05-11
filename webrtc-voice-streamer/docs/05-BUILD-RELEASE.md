@@ -71,9 +71,9 @@ python webrtc_server_relay.py
 
 | File                    | Version Location  | Format                  |
 | ----------------------- | ----------------- | ----------------------- |
-| `config.yaml`           | Line 2            | `version: "1.1.8"`      |
+| `config.yaml`           | Line 2            | `version: "1.1.9"`      |
 | `frontend/package.json` | Line 3            | `"version": "1.2.0"`    |
-| `build.yaml`            | Line 6            | `CACHE_BUSTER: "1.1.8"` |
+| `build.yaml`            | Line 6            | `CACHE_BUSTER: "1.1.9"` |
 | `frontend/src/*.ts`     | Card registration | `version: "1.2.0"`      |
 
 ### Step-by-Step
@@ -86,14 +86,14 @@ python webrtc_server_relay.py
 # - PATCH: Bug fixes
 
 # 2. Update config.yaml
-# Edit: version: "1.1.8" → "1.1.9"
+# Edit: version: "1.1.9" → "1.1.10"
 
 # 3. Update frontend/package.json
 cd frontend
 # Edit: "version": "1.2.0" → "1.2.1"
 
 # 4. Update build.yaml
-# Edit: CACHE_BUSTER: "1.1.8" → "1.1.9"
+# Edit: CACHE_BUSTER: "1.1.9" → "1.1.10"
 
 # 5. Update frontend card versions
 # Edit: frontend/src/voice-sending-card.ts (line ~220)
@@ -105,11 +105,11 @@ cd ..
 
 # 7. Commit changes
 git add -A
-git commit -m "chore: bump version to 1.1.9"
+git commit -m "chore: bump version to 1.1.10"
 
 # 8. Tag release
-git tag -a v1.1.9 -m "Release version 1.1.9"
-git push origin v1.1.9
+git tag -a v1.1.10 -m "Release version 1.1.10"
+git push origin v1.1.10
 ```
 
 ---
@@ -130,17 +130,17 @@ git push origin v1.1.9
 # 1. Ensure clean working directory
 git status
 git add -A
-git commit -m "chore: prepare release v1.1.9"
+git commit -m "chore: prepare release v1.1.10"
 
 # 2. Build frontend
 cd frontend && npm run build && cd ..
 
 # 3. Tag release
-git tag -a v1.1.9 -m "Release version 1.1.9"
+git tag -a v1.1.10 -m "Release version 1.1.10"
 
 # 4. Push everything
 git push origin main
-git push origin v1.1.9
+git push origin v1.1.10
 ```
 
 ### Post-Release
@@ -200,13 +200,13 @@ docker buildx build \
 python webrtc_server_relay.py
 
 # 3. Bump PATCH version
-# config.yaml: 1.1.8 → 1.1.9
-# build.yaml: 1.1.8 → 1.1.9
+# config.yaml: 1.1.9 → 1.1.10
+# build.yaml: 1.1.9 → 1.1.10
 
 # 4. Commit & push
 git add -A && git commit -m "fix: [description]"
-git tag -a v1.1.9 -m "v1.1.9"
-git push origin main v1.1.9
+git tag -a v1.1.10 -m "v1.1.10"
+git push origin main v1.1.10
 ```
 
 ### Scenario 2: Frontend Feature
@@ -220,9 +220,9 @@ cd frontend && npm run dev
 npm run build
 
 # 4. Bump MINOR version (new feature)
-# config.yaml: 1.1.8 → 1.2.0
+# config.yaml: 1.1.9 → 1.2.0
 # frontend/package.json: 1.2.0 → 1.3.0
-# build.yaml: 1.1.8 → 1.2.0
+# build.yaml: 1.1.9 → 1.2.0
 
 # 5. Commit & push
 git add -A && git commit -m "feat: [description]"
