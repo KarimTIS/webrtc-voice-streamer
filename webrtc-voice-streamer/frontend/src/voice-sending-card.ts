@@ -63,11 +63,35 @@ export class VoiceSendingCard extends LitElement {
     return 3;
   }
 
-  connectedCallback() {
+  async connectedCallback() {
     super.connectedCallback();
+    
+    let serverUrl = this.config?.server_url;
+    
+    // Auto-discover ingress URL if not provided
+    if (!serverUrl && this.hass) {
+      try {
+        const result = await this.hass.callWS({
+          type: "supervisor/api",
+          endpoint: "/addons/self/info",
+          method: "GET"
+        }).catch(() => this.hass.callWS({
+          type: "supervisor/api",
+          endpoint: "/addons/webrtc-voice-streamer/info",
+          method: "GET"
+        }));
+        if (result && result.data && result.data.ingress_url) {
+          serverUrl = `${result.data.ingress_url}/ws`;
+          console.log("Auto-discovered WebRTC Ingress URL:", serverUrl);
+        }
+      } catch (e) {
+        console.warn("Failed to auto-discover Ingress URL via Supervisor API", e);
+      }
+    }
+
     if (!this.webrtc) {
       this.webrtc = new WebRTCManager({
-        serverUrl: this.config?.server_url,
+        serverUrl: serverUrl,
         noiseSuppression: this.config?.noise_suppression,
         echoCancellation: this.config?.echo_cancellation,
         autoGainControl: this.config?.auto_gain_control,

@@ -223,10 +223,33 @@ export class VoiceReceivingCard extends LitElement {
     return 4;
   }
 
-  connectedCallback() {
+  async connectedCallback() {
     super.connectedCallback();
+    
+    let serverUrl = this.config?.server_url;
+    
+    if (!serverUrl && this.hass) {
+      try {
+        const result = await this.hass.callWS({
+          type: "supervisor/api",
+          endpoint: "/addons/self/info",
+          method: "GET"
+        }).catch(() => this.hass.callWS({
+          type: "supervisor/api",
+          endpoint: "/addons/webrtc-voice-streamer/info",
+          method: "GET"
+        }));
+        if (result && result.data && result.data.ingress_url) {
+          serverUrl = `${result.data.ingress_url}/ws`;
+          console.log("Auto-discovered WebRTC Ingress URL:", serverUrl);
+        }
+      } catch (e) {
+        console.warn("Failed to auto-discover Ingress URL via Supervisor API", e);
+      }
+    }
+
     this.webrtc = new WebRTCManager({
-      serverUrl: this.config?.server_url,
+      serverUrl: serverUrl,
     });
 
     this.webrtc.addEventListener("state-changed", (e: any) => {

@@ -184,34 +184,34 @@ export class WebRTCManager extends EventTarget {
       if (this.config.serverUrl) {
         try {
           let urlStr = this.config.serverUrl;
+          let wsProtocol = window.location.protocol === "https:" ? "wss:" : "ws:";
 
-          // Check if protocol is specified
-          if (!urlStr.match(/^(https?|wss?):\/\//)) {
-            // No protocol, prepend based on current page
-            const pageProto = window.location.protocol === "https:" ? "https:" : "http:";
-            urlStr = `${pageProto}//${urlStr}`;
-          }
-
-          const url = new URL(urlStr);
-
-          // Determine WebSocket protocol
-          let wsProtocol: string;
-          if (url.protocol === "https:" || url.protocol === "wss:") {
-            wsProtocol = "wss:";
+          if (urlStr.startsWith("/")) {
+            // Relative path, use current host
+            wsUrl = `${wsProtocol}//${window.location.host}${urlStr}`;
           } else {
-            wsProtocol = "ws:";
-          }
+            // Check if protocol is specified
+            if (!urlStr.match(/^(https?|wss?):\/\//)) {
+              const pageProto = window.location.protocol === "https:" ? "https:" : "http:";
+              urlStr = `${pageProto}//${urlStr}`;
+            }
 
-          // Build WebSocket URL preserving the path
-          const host = url.hostname;
-          const port = url.port; // Will be empty string for default ports
-          const path = url.pathname || "/ws"; // Use provided path or default to /ws
+            const url = new URL(urlStr);
+            if (url.protocol === "https:" || url.protocol === "wss:") {
+              wsProtocol = "wss:";
+            } else {
+              wsProtocol = "ws:";
+            }
 
-          // Construct URL with or without explicit port
-          if (port) {
-            wsUrl = `${wsProtocol}//${host}:${port}${path}`;
-          } else {
-            wsUrl = `${wsProtocol}//${host}${path}`;
+            const host = url.hostname;
+            const port = url.port;
+            const path = url.pathname || "/ws";
+
+            if (port) {
+              wsUrl = `${wsProtocol}//${host}:${port}${path}`;
+            } else {
+              wsUrl = `${wsProtocol}//${host}${path}`;
+            }
           }
         } catch (e: any) {
           const msg = `Invalid Server URL: ${this.config.serverUrl}`;

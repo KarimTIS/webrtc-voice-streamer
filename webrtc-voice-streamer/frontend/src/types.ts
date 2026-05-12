@@ -33,6 +33,7 @@ export interface HomeAssistant {
   conn: any;
   states: any;
   callService: (domain: string, service: string, serviceData?: object) => Promise<void>;
+  callWS: (msg: any) => Promise<any>;
 }
 
 export type ConnectionStatus = "disconnected" | "connecting" | "connected" | "error";
