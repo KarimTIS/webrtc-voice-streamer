@@ -1,5 +1,5 @@
 name: "WebRTC Voice Streamer"
-version: "1.1.9"
+version: "1.1.10"
 slug: "webrtc-voice-streamer"
 description: "WebRTC-based real-time audio streaming backend for Home Assistant voice applications"
 url: "https://github.com/KarimTIS/webrtc-voice-streamer"
