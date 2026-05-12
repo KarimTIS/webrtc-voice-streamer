@@ -30,7 +30,6 @@ COPY *.yaml ./
 COPY --from=frontend-builder /app/frontend/dist /app/frontend/dist
 
 # Copy scripts to root
-COPY ssl-setup.sh /
 COPY run.sh /
 
 # Fix permissions
