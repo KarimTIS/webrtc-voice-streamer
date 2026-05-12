@@ -186,6 +186,11 @@
         try {
             const res = await fetch('./api/media_players');
             const players = await res.json();
+            
+            if (!Array.isArray(players)) {
+                throw new Error(players.error || "Invalid response from server");
+            }
+            
             mediaPlayerSelect.innerHTML = '<option value="">-- Select a Media Player --</option>';
             players.forEach(p => {
                 const opt = document.createElement('option');
@@ -195,7 +200,7 @@
             });
         } catch (e) {
             console.error("Failed to load media players", e);
-            mediaPlayerSelect.innerHTML = '<option value="">Failed to load</option>';
+            mediaPlayerSelect.innerHTML = '<option value="">Failed to load (' + e.message + ')</option>';
         }
     }
     fetchMediaPlayers();
