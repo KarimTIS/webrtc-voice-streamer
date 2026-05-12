@@ -23,6 +23,8 @@ ports_description:
   8080/tcp: "Certificate Download (HTTP)"
 ingress: true
 ingress_port: 8099
+hassio_api: true
+homeassistant_api: true
 panel_icon: mdi:microphone
 options:
   log_level: info
