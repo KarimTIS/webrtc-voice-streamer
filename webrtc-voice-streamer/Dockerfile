@@ -33,7 +33,7 @@ COPY --from=frontend-builder /app/frontend/dist /app/frontend/dist
 COPY run.sh /
 
 # Fix permissions
-RUN chmod a+x *.py && chmod a+x /run.sh /ssl-setup.sh
+RUN chmod a+x *.py && chmod a+x /run.sh
 
 EXPOSE 8099 8443 8555 8080
 
