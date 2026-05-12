@@ -25,6 +25,7 @@ RUN pip install --no-cache-dir --break-system-packages -r requirements.txt
 # Copy application files (Python scripts and root files)
 COPY *.py ./
 COPY *.yaml ./
+COPY ui/ ./ui/
 
 # Copy only the built frontend from builder stage
 COPY --from=frontend-builder /app/frontend/dist /app/frontend/dist

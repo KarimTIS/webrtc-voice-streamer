@@ -33,8 +33,6 @@ class VoiceStreamingServer:
         self.app.router.add_get("/api/media_players", self.api_media_players)
         self.app.router.add_post("/api/play_media", self.api_play_media)
         self.app.router.add_post("/api/stop_media", self.api_stop_media)
-        # Static files for UI
-        self.app.router.add_static("/assets", "ui/assets", show_index=True)
         self.start_time = asyncio.get_event_loop().time()
         self.cleanup_task = None
 
