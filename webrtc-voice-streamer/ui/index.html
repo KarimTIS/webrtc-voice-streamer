@@ -222,14 +222,43 @@
         const hostname = window.location.hostname;
         streamUrlInput.value = `http://${hostname}:8081/stream/latest.mp3`;
 
+        // Helper to get HA object from parent window
+        function getHass() {
+            try {
+                if (window.parent && window.parent.document) {
+                    const ha = window.parent.document.querySelector("home-assistant");
+                    if (ha && ha.hass) {
+                        return ha.hass;
+                    }
+                }
+            } catch (e) {
+                console.warn("Cannot access parent Home Assistant object", e);
+            }
+            return null;
+        }
+
         // Fetch Media Players
         async function fetchMediaPlayers() {
             try {
-                const res = await fetch("./api/media_players");
-                const players = await res.json();
+                const hass = getHass();
+                let players = [];
 
-                if (!Array.isArray(players)) {
-                    throw new Error(players.error || "Invalid response from server");
+                if (hass) {
+                    // Fast local DOM extraction!
+                    players = Object.values(hass.states)
+                        .filter((entity) => entity.entity_id.startsWith("media_player."))
+                        .map((entity) => ({
+                            entity_id: entity.entity_id,
+                            name: entity.attributes.friendly_name || entity.entity_id,
+                            state: entity.state
+                        }));
+                } else {
+                    // Fallback to backend API
+                    const res = await fetch("./api/media_players");
+                    players = await res.json();
+                    if (!Array.isArray(players)) {
+                        throw new Error(players.error || "Invalid response from server");
+                    }
                 }
 
                 mediaPlayerSelect.innerHTML =
@@ -402,6 +431,22 @@
             if (!entity_id) return alert("Select a media player");
             if (!media_content_id) return alert("Enter stream URL");
 
+            const hass = getHass();
+            if (hass) {
+                try {
+                    await hass.callService("media_player", "play_media", {
+                        entity_id: entity_id,
+                        media_content_id: media_content_id,
+                        media_content_type: "music"
+                    });
+                    return;
+                } catch (e) {
+                    alert("Error playing media via HA Frontend: " + e.message);
+                    return;
+                }
+            }
+
+            // Fallback to backend
             try {
                 const res = await fetch("./api/play_media", {
                     method: "POST",
@@ -418,6 +463,20 @@
             const entity_id = mediaPlayerSelect.value;
             if (!entity_id) return alert("Select a media player");
 
+            const hass = getHass();
+            if (hass) {
+                try {
+                    await hass.callService("media_player", "media_stop", {
+                        entity_id: entity_id
+                    });
+                    return;
+                } catch (e) {
+                    alert("Error stopping media via HA Frontend: " + e.message);
+                    return;
+                }
+            }
+
+            // Fallback to backend
             try {
                 const res = await fetch("./api/stop_media", {
                     method: "POST",
