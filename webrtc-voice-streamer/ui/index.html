@@ -1,8 +1,9 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
+
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>WebRTC Voice Streamer</title>
     <style>
         :root {
@@ -18,7 +19,9 @@
         }
 
         body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            font-family:
+                -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+                "Helvetica Neue", Arial, sans-serif;
             background-color: var(--bg-color);
             color: var(--text);
             margin: 0;
@@ -43,7 +46,9 @@
             border: 1px solid var(--border);
         }
 
-        h1, h2, h3 {
+        h1,
+        h2,
+        h3 {
             margin-top: 0;
             font-weight: 500;
         }
@@ -62,9 +67,21 @@
             font-weight: 500;
             background-color: var(--border);
         }
-        .status-badge.connected { background-color: rgba(76, 175, 80, 0.2); color: var(--success); }
-        .status-badge.error { background-color: rgba(244, 67, 54, 0.2); color: var(--danger); }
-        .status-badge.connecting { background-color: rgba(3, 169, 244, 0.2); color: var(--primary); }
+
+        .status-badge.connected {
+            background-color: rgba(76, 175, 80, 0.2);
+            color: var(--success);
+        }
+
+        .status-badge.error {
+            background-color: rgba(244, 67, 54, 0.2);
+            color: var(--danger);
+        }
+
+        .status-badge.connecting {
+            background-color: rgba(3, 169, 244, 0.2);
+            color: var(--primary);
+        }
 
         .btn {
             background-color: var(--primary);
@@ -82,20 +99,33 @@
             width: 100%;
             font-weight: 500;
         }
-        .btn:hover { background-color: var(--primary-dark); }
-        .btn:disabled { opacity: 0.5; cursor: not-allowed; }
-        .btn.danger { background-color: var(--danger); }
+
+        .btn:hover {
+            background-color: var(--primary-dark);
+        }
+
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .btn.danger {
+            background-color: var(--danger);
+        }
 
         .form-group {
             margin-bottom: 16px;
         }
+
         label {
             display: block;
             margin-bottom: 8px;
             color: var(--text-secondary);
             font-size: 14px;
         }
-        select, input {
+
+        select,
+        input {
             width: 100%;
             padding: 10px;
             background-color: var(--bg-color);
@@ -119,252 +149,287 @@
         }
     </style>
 </head>
+
 <body>
+    <div class="container">
+        <div class="card">
+            <div class="header">
+                <h2>Voice Streamer</h2>
+                <span id="ws-status" class="status-badge disconnected">Disconnected</span>
+            </div>
 
-<div class="container">
-    <div class="card">
-        <div class="header">
-            <h2>🎙️ Voice Streamer</h2>
-            <span id="ws-status" class="status-badge disconnected">Disconnected</span>
+            <canvas id="visualizer" width="600" height="100"></canvas>
+
+            <button id="btn-mic" class="btn">Start Microphone</button>
+            <p id="error-msg" style="color: var(--danger); font-size: 14px; margin-top: 10px"></p>
         </div>
 
-        <canvas id="visualizer" width="600" height="100"></canvas>
+        <div class="card">
+            <h2>Play to Media Player</h2>
 
-        <button id="btn-mic" class="btn">Start Microphone</button>
-        <p id="error-msg" style="color: var(--danger); font-size: 14px; margin-top: 10px;"></p>
+            <div class="form-group">
+                <label for="stream-url">Internal Audio Stream URL</label>
+                <input type="text" id="stream-url" placeholder="http://192.168.x.x:8081/stream/latest.mp3" />
+                <small style="
+              color: var(--text-secondary);
+              display: block;
+              margin-top: 4px;
+            ">This must be reachable by your smart speakers on the local
+                    network.</small>
+            </div>
+
+            <div class="form-group">
+                <label for="media-player-select">Select Media Player</label>
+                <select id="media-player-select">
+                    <option value="">Loading...</option>
+                </select>
+            </div>
+
+            <div style="display: flex; gap: 10px">
+                <button id="btn-play" class="btn">Play Stream</button>
+                <button id="btn-stop" class="btn danger" style="
+              background-color: transparent;
+              border: 1px solid var(--danger);
+              color: var(--danger);
+            ">
+                    Stop
+                </button>
+            </div>
+        </div>
     </div>
 
-    <div class="card">
-        <h2>🔊 Play to Media Player</h2>
-        
-        <div class="form-group">
-            <label for="stream-url">Internal Audio Stream URL</label>
-            <input type="text" id="stream-url" placeholder="http://192.168.x.x:8081/stream/latest.mp3">
-            <small style="color: var(--text-secondary); display: block; margin-top: 4px;">This must be reachable by your smart speakers on the local network.</small>
-        </div>
+    <script>
+        let ws = null;
+        let peerConnection = null;
+        let mediaStream = null;
+        let audioContext = null;
+        let analyser = null;
+        let animationFrame = null;
+        let streamId = null;
 
-        <div class="form-group">
-            <label for="media-player-select">Select Media Player</label>
-            <select id="media-player-select">
-                <option value="">Loading...</option>
-            </select>
-        </div>
+        const wsStatus = document.getElementById("ws-status");
+        const btnMic = document.getElementById("btn-mic");
+        const errorMsg = document.getElementById("error-msg");
+        const visualizer = document.getElementById("visualizer");
+        const canvasCtx = visualizer.getContext("2d");
 
-        <div style="display: flex; gap: 10px;">
-            <button id="btn-play" class="btn">Play Stream</button>
-            <button id="btn-stop" class="btn danger" style="background-color: transparent; border: 1px solid var(--danger); color: var(--danger);">Stop</button>
-        </div>
-    </div>
-</div>
+        const streamUrlInput = document.getElementById("stream-url");
+        const mediaPlayerSelect = document.getElementById("media-player-select");
+        const btnPlay = document.getElementById("btn-play");
+        const btnStop = document.getElementById("btn-stop");
 
-<script>
-    let ws = null;
-    let peerConnection = null;
-    let mediaStream = null;
-    let audioContext = null;
-    let analyser = null;
-    let animationFrame = null;
-    let streamId = null;
+        // Initialize defaults
+        const hostname = window.location.hostname;
+        streamUrlInput.value = `http://${hostname}:8081/stream/latest.mp3`;
 
-    const wsStatus = document.getElementById('ws-status');
-    const btnMic = document.getElementById('btn-mic');
-    const errorMsg = document.getElementById('error-msg');
-    const visualizer = document.getElementById('visualizer');
-    const canvasCtx = visualizer.getContext('2d');
-    
-    const streamUrlInput = document.getElementById('stream-url');
-    const mediaPlayerSelect = document.getElementById('media-player-select');
-    const btnPlay = document.getElementById('btn-play');
-    const btnStop = document.getElementById('btn-stop');
+        // Fetch Media Players
+        async function fetchMediaPlayers() {
+            try {
+                const res = await fetch("./api/media_players");
+                const players = await res.json();
 
-    // Initialize defaults
-    const hostname = window.location.hostname;
-    streamUrlInput.value = `http://${hostname}:8081/stream/latest.mp3`;
-
-    // Fetch Media Players
-    async function fetchMediaPlayers() {
-        try {
-            const res = await fetch('./api/media_players');
-            const players = await res.json();
-            
-            if (!Array.isArray(players)) {
-                throw new Error(players.error || "Invalid response from server");
-            }
-            
-            mediaPlayerSelect.innerHTML = '<option value="">-- Select a Media Player --</option>';
-            players.forEach(p => {
-                const opt = document.createElement('option');
-                opt.value = p.entity_id;
-                opt.textContent = `${p.name} (${p.state})`;
-                mediaPlayerSelect.appendChild(opt);
-            });
-        } catch (e) {
-            console.error("Failed to load media players", e);
-            mediaPlayerSelect.innerHTML = '<option value="">Failed to load (' + e.message + ')</option>';
-        }
-    }
-    fetchMediaPlayers();
-
-    // Setup WebSocket
-    function connectWebSocket() {
-        const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-        // Connect to the relative path, replacing any trailing slash
-        const wsPath = window.location.pathname.replace(/\/$/, '') + '/ws';
-        const wsUrl = `${protocol}//${window.location.host}${wsPath}`;
-        
-        ws = new WebSocket(wsUrl);
-        
-        ws.onopen = () => {
-            wsStatus.textContent = 'Connected';
-            wsStatus.className = 'status-badge connected';
-        };
-        
-        ws.onclose = () => {
-            wsStatus.textContent = 'Disconnected';
-            wsStatus.className = 'status-badge disconnected';
-            stopMic();
-            setTimeout(connectWebSocket, 3000);
-        };
-        
-        ws.onmessage = async (e) => {
-            const msg = JSON.parse(e.data);
-            
-            if (msg.type === 'sender_ready') {
-                if (peerConnection) {
-                    const offer = await peerConnection.createOffer({offerToReceiveAudio: false, offerToReceiveVideo: false});
-                    await peerConnection.setLocalDescription(offer);
-                    ws.send(JSON.stringify({
-                        type: 'webrtc_offer',
-                        offer: { sdp: peerConnection.localDescription.sdp, type: peerConnection.localDescription.type }
-                    }));
+                if (!Array.isArray(players)) {
+                    throw new Error(players.error || "Invalid response from server");
                 }
-            } else if (msg.type === 'webrtc_answer') {
-                if (peerConnection) {
-                    await peerConnection.setRemoteDescription(new RTCSessionDescription(msg.answer));
+
+                mediaPlayerSelect.innerHTML =
+                    '<option value="">-- Select a Media Player --</option>';
+                players.forEach((p) => {
+                    const opt = document.createElement("option");
+                    opt.value = p.entity_id;
+                    opt.textContent = `${p.name} (${p.state})`;
+                    mediaPlayerSelect.appendChild(opt);
+                });
+            } catch (e) {
+                console.error("Failed to load media players", e);
+                mediaPlayerSelect.innerHTML =
+                    '<option value="">Failed to load (' + e.message + ")</option>";
+            }
+        }
+        fetchMediaPlayers();
+
+        // Setup WebSocket
+        function connectWebSocket() {
+            const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
+            // Connect to the relative path, replacing any trailing slash
+            const wsPath = window.location.pathname.replace(/\/$/, "") + "/ws";
+            const wsUrl = `${protocol}//${window.location.host}${wsPath}`;
+
+            ws = new WebSocket(wsUrl);
+
+            ws.onopen = () => {
+                wsStatus.textContent = "Connected";
+                wsStatus.className = "status-badge connected";
+            };
+
+            ws.onclose = () => {
+                wsStatus.textContent = "Disconnected";
+                wsStatus.className = "status-badge disconnected";
+                stopMic();
+                setTimeout(connectWebSocket, 3000);
+            };
+
+            ws.onmessage = async (e) => {
+                const msg = JSON.parse(e.data);
+
+                if (msg.type === "sender_ready") {
+                    if (peerConnection) {
+                        const offer = await peerConnection.createOffer({
+                            offerToReceiveAudio: false,
+                            offerToReceiveVideo: false,
+                        });
+                        await peerConnection.setLocalDescription(offer);
+                        ws.send(
+                            JSON.stringify({
+                                type: "webrtc_offer",
+                                offer: {
+                                    sdp: peerConnection.localDescription.sdp,
+                                    type: peerConnection.localDescription.type,
+                                },
+                            }),
+                        );
+                    }
+                } else if (msg.type === "webrtc_answer") {
+                    if (peerConnection) {
+                        await peerConnection.setRemoteDescription(
+                            new RTCSessionDescription(msg.answer),
+                        );
+                    }
                 }
+            };
+        }
+
+        connectWebSocket();
+
+        // Start/Stop Mic
+        btnMic.onclick = async () => {
+            if (mediaStream) {
+                stopMic();
+            } else {
+                await startMic();
             }
         };
-    }
 
-    connectWebSocket();
+        async function startMic() {
+            errorMsg.textContent = "";
+            try {
+                mediaStream = await navigator.mediaDevices.getUserMedia({
+                    audio: {
+                        echoCancellation: true,
+                        noiseSuppression: true,
+                        autoGainControl: true,
+                        sampleRate: 16000,
+                        channelCount: 1,
+                    },
+                });
 
-    // Start/Stop Mic
-    btnMic.onclick = async () => {
-        if (mediaStream) {
-            stopMic();
-        } else {
-            await startMic();
-        }
-    };
+                peerConnection = new RTCPeerConnection({ iceServers: [] });
 
-    async function startMic() {
-        errorMsg.textContent = "";
-        try {
-            mediaStream = await navigator.mediaDevices.getUserMedia({
-                audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true, sampleRate: 16000, channelCount: 1 }
-            });
-            
-            peerConnection = new RTCPeerConnection({ iceServers: [] });
-            
-            mediaStream.getAudioTracks().forEach(track => {
-                peerConnection.addTrack(track, mediaStream);
-            });
+                mediaStream.getAudioTracks().forEach((track) => {
+                    peerConnection.addTrack(track, mediaStream);
+                });
 
-            setupVisualization(mediaStream);
+                setupVisualization(mediaStream);
 
-            ws.send(JSON.stringify({ type: 'start_sending' }));
-            
-            btnMic.textContent = "🛑 Stop Microphone";
-            btnMic.classList.add('danger');
-        } catch (e) {
-            console.error(e);
-            errorMsg.textContent = "Error: " + e.message;
-        }
-    }
+                ws.send(JSON.stringify({ type: "start_sending" }));
 
-    function stopMic() {
-        if (mediaStream) {
-            mediaStream.getTracks().forEach(t => t.stop());
-            mediaStream = null;
-        }
-        if (peerConnection) {
-            peerConnection.close();
-            peerConnection = null;
-        }
-        if (ws && ws.readyState === WebSocket.OPEN) {
-            ws.send(JSON.stringify({ type: 'stop_stream' }));
-        }
-        if (animationFrame) cancelAnimationFrame(animationFrame);
-        
-        canvasCtx.clearRect(0, 0, visualizer.width, visualizer.height);
-        btnMic.textContent = "Start Microphone";
-        btnMic.classList.remove('danger');
-    }
-
-    function setupVisualization(stream) {
-        audioContext = new (window.AudioContext || window.webkitAudioContext)();
-        analyser = audioContext.createAnalyser();
-        analyser.fftSize = 256;
-        const source = audioContext.createMediaStreamSource(stream);
-        source.connect(analyser);
-        
-        const bufferLength = analyser.frequencyBinCount;
-        const dataArray = new Uint8Array(bufferLength);
-        
-        function draw() {
-            animationFrame = requestAnimationFrame(draw);
-            analyser.getByteFrequencyData(dataArray);
-            
-            canvasCtx.fillStyle = '#121212';
-            canvasCtx.fillRect(0, 0, visualizer.width, visualizer.height);
-            
-            const barWidth = (visualizer.width / bufferLength) * 2.5;
-            let x = 0;
-            
-            for (let i = 0; i < bufferLength; i++) {
-                const barHeight = (dataArray[i] / 255) * visualizer.height;
-                canvasCtx.fillStyle = `rgb(${barHeight + 100}, 169, 244)`;
-                canvasCtx.fillRect(x, visualizer.height - barHeight, barWidth, barHeight);
-                x += barWidth + 1;
+                btnMic.textContent = "Stop Microphone";
+                btnMic.classList.add("danger");
+            } catch (e) {
+                console.error(e);
+                errorMsg.textContent = "Error: " + e.message;
             }
         }
-        draw();
-    }
 
-    // Media Player Controls
-    btnPlay.onclick = async () => {
-        const entity_id = mediaPlayerSelect.value;
-        const media_content_id = streamUrlInput.value;
-        if (!entity_id) return alert("Select a media player");
-        if (!media_content_id) return alert("Enter stream URL");
+        function stopMic() {
+            if (mediaStream) {
+                mediaStream.getTracks().forEach((t) => t.stop());
+                mediaStream = null;
+            }
+            if (peerConnection) {
+                peerConnection.close();
+                peerConnection = null;
+            }
+            if (ws && ws.readyState === WebSocket.OPEN) {
+                ws.send(JSON.stringify({ type: "stop_stream" }));
+            }
+            if (animationFrame) cancelAnimationFrame(animationFrame);
 
-        try {
-            const res = await fetch('./api/play_media', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ entity_id, media_content_id })
-            });
-            if (!res.ok) throw new Error(await res.text());
-        } catch(e) {
-            alert("Error playing media: " + e.message);
+            canvasCtx.clearRect(0, 0, visualizer.width, visualizer.height);
+            btnMic.textContent = "Start Microphone";
+            btnMic.classList.remove("danger");
         }
-    };
 
-    btnStop.onclick = async () => {
-        const entity_id = mediaPlayerSelect.value;
-        if (!entity_id) return alert("Select a media player");
+        function setupVisualization(stream) {
+            audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            analyser = audioContext.createAnalyser();
+            analyser.fftSize = 256;
+            const source = audioContext.createMediaStreamSource(stream);
+            source.connect(analyser);
 
-        try {
-            const res = await fetch('./api/stop_media', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ entity_id })
-            });
-            if (!res.ok) throw new Error(await res.text());
-        } catch(e) {
-            alert("Error stopping media: " + e.message);
+            const bufferLength = analyser.frequencyBinCount;
+            const dataArray = new Uint8Array(bufferLength);
+
+            function draw() {
+                animationFrame = requestAnimationFrame(draw);
+                analyser.getByteFrequencyData(dataArray);
+
+                canvasCtx.fillStyle = "#121212";
+                canvasCtx.fillRect(0, 0, visualizer.width, visualizer.height);
+
+                const barWidth = (visualizer.width / bufferLength) * 2.5;
+                let x = 0;
+
+                for (let i = 0; i < bufferLength; i++) {
+                    const barHeight = (dataArray[i] / 255) * visualizer.height;
+                    canvasCtx.fillStyle = `rgb(${barHeight + 100}, 169, 244)`;
+                    canvasCtx.fillRect(
+                        x,
+                        visualizer.height - barHeight,
+                        barWidth,
+                        barHeight,
+                    );
+                    x += barWidth + 1;
+                }
+            }
+            draw();
         }
-    };
-</script>
+
+        // Media Player Controls
+        btnPlay.onclick = async () => {
+            const entity_id = mediaPlayerSelect.value;
+            const media_content_id = streamUrlInput.value;
+            if (!entity_id) return alert("Select a media player");
+            if (!media_content_id) return alert("Enter stream URL");
+
+            try {
+                const res = await fetch("./api/play_media", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ entity_id, media_content_id }),
+                });
+                if (!res.ok) throw new Error(await res.text());
+            } catch (e) {
+                alert("Error playing media: " + e.message);
+            }
+        };
+
+        btnStop.onclick = async () => {
+            const entity_id = mediaPlayerSelect.value;
+            if (!entity_id) return alert("Select a media player");
+
+            try {
+                const res = await fetch("./api/stop_media", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ entity_id }),
+                });
+                if (!res.ok) throw new Error(await res.text());
+            } catch (e) {
+                alert("Error stopping media: " + e.message);
+            }
+        };
+    </script>
 </body>
+
 </html>
