@@ -2,14 +2,13 @@ import asyncio
 import json
 import logging
 import os
-import ssl
 import uuid
 from typing import Dict
 
+import aiohttp
 from aiohttp import WSMsgType, web
 from aiortc import RTCConfiguration, RTCPeerConnection, RTCSessionDescription
 from aiortc.contrib.media import MediaRelay
-
 from audio_stream_server import AudioStreamServer
 from license_middleware import license_middleware
 
@@ -30,7 +29,12 @@ class VoiceStreamingServer:
         self.app.router.add_get("/health", self.health_check)
         self.app.router.add_get("/metrics", self.metrics_handler)
         self.app.router.add_get("/ws", self.websocket_handler)
-        self.app.router.add_get("/", self.websocket_handler)
+        # API routes for HA
+        self.app.router.add_get("/api/media_players", self.api_media_players)
+        self.app.router.add_post("/api/play_media", self.api_play_media)
+        self.app.router.add_post("/api/stop_media", self.api_stop_media)
+        # Static files for UI
+        self.app.router.add_static("/assets", "ui/assets", show_index=True)
         self.start_time = asyncio.get_event_loop().time()
         self.cleanup_task = None
 
@@ -59,6 +63,109 @@ class VoiceStreamingServer:
                 "uptime_seconds": uptime,
             }
         )
+
+    async def index_handler(self, request):
+        index_path = os.path.join(os.path.dirname(__file__), "ui", "index.html")
+        if os.path.exists(index_path):
+            return web.FileResponse(index_path)
+        return web.Response(
+            text="Web UI not found. Please create ui/index.html", status=404
+        )
+
+    async def _ha_api_request(self, method, endpoint, json_data=None):
+        token = os.environ.get("SUPERVISOR_TOKEN")
+        if not token:
+            logger.error("SUPERVISOR_TOKEN not set, cannot call HA API")
+            return None, 401
+
+        headers = {
+            "Authorization": f"Bearer {token}",
+            "Content-Type": "application/json",
+        }
+        url = f"http://supervisor/core/api{endpoint}"
+
+        try:
+            async with aiohttp.ClientSession() as session:
+                async with session.request(
+                    method, url, headers=headers, json=json_data
+                ) as resp:
+                    if resp.status >= 400:
+                        logger.error(f"HA API Error {resp.status}: {await resp.text()}")
+                    try:
+                        data = await resp.json()
+                        return data, resp.status
+                    except Exception:
+                        return await resp.text(), resp.status
+        except Exception as e:
+            logger.error(f"Error calling HA API: {e}")
+            return str(e), 500
+
+    async def api_media_players(self, request):
+        data, status = await self._ha_api_request("GET", "/states")
+        if status != 200:
+            return web.json_response({"error": "Failed to fetch states"}, status=status)
+
+        players = []
+        if isinstance(data, list):
+            for state in data:
+                if state.get("entity_id", "").startswith("media_player."):
+                    players.append(
+                        {
+                            "entity_id": state.get("entity_id"),
+                            "name": state.get("attributes", {}).get(
+                                "friendly_name", state.get("entity_id")
+                            ),
+                            "state": state.get("state"),
+                        }
+                    )
+        return web.json_response(players)
+
+    async def api_play_media(self, request):
+        try:
+            body = await request.json()
+            entity_id = body.get("entity_id")
+            media_content_id = body.get("media_content_id")
+
+            if not entity_id or not media_content_id:
+                return web.json_response(
+                    {"error": "Missing entity_id or media_content_id"}, status=400
+                )
+
+            payload = {
+                "entity_id": entity_id,
+                "media_content_id": media_content_id,
+                "media_content_type": "music",
+            }
+
+            data, status = await self._ha_api_request(
+                "POST", "/services/media_player/play_media", payload
+            )
+            return web.json_response(
+                data if isinstance(data, dict) else {"status": "ok"}, status=status
+            )
+
+        except Exception as e:
+            return web.json_response({"error": str(e)}, status=500)
+
+    async def api_stop_media(self, request):
+        try:
+            body = await request.json()
+            entity_id = body.get("entity_id")
+
+            if not entity_id:
+                return web.json_response({"error": "Missing entity_id"}, status=400)
+
+            payload = {"entity_id": entity_id}
+
+            data, status = await self._ha_api_request(
+                "POST", "/services/media_player/media_stop", payload
+            )
+            return web.json_response(
+                data if isinstance(data, dict) else {"status": "ok"}, status=status
+            )
+
+        except Exception as e:
+            return web.json_response({"error": str(e)}, status=500)
 
     async def cleanup_stale_streams(self):
         """Periodically clean up streams with no active receivers"""
@@ -447,65 +554,9 @@ class VoiceStreamingServer:
         finally:
             logger.info(f"Visualization task stopped for {stream_id}")
 
-    async def ca_download_handler(self, request):
-        """Serve the CA certificate if available."""
-        ca_paths = [
-            "/ssl/ca.crt",
-            "/data/ssl/ca.crt",
-            "/config/ssl/ca.crt",
-            "ssl/ca.crt",
-            "./ca.crt",
-        ]
-        for path in ca_paths:
-            if os.path.exists(path):
-                return web.FileResponse(path)
-        return web.Response(status=404, text="CA Certificate not found")
-
     async def run_server(self):
-        base_port = int(os.environ.get("PORT", 8080))
+        base_port = int(os.environ.get("PORT", 8099))
         host = "0.0.0.0"
-
-        # Check for SSL certificates
-        ssl_context = None
-        cert_file = os.environ.get("SSL_CERT_FILE")
-        key_file = os.environ.get("SSL_KEY_FILE")
-
-        if cert_file and key_file:
-            if os.path.exists(cert_file) and os.path.exists(key_file):
-                try:
-                    ssl_context = ssl.create_default_context(ssl.Purpose.CLIENT_AUTH)
-                    ssl_context.load_cert_chain(cert_file, key_file)
-                    logger.info(f"SSL enabled using certificates from {cert_file}")
-                except Exception as e:
-                    logger.error(
-                        f"Failed to load SSL certificates from {cert_file}: {e}"
-                    )
-            else:
-                logger.warning(
-                    f"SSL keys defined but files not found: {cert_file}, {key_file}"
-                )
-
-        # Fallback to legacy hardcoded paths
-        if not ssl_context:
-            cert_locations = [
-                ("/ssl/fullchain.pem", "/ssl/privkey.pem"),
-                ("/config/ssl/fullchain.pem", "/config/ssl/privkey.pem"),
-            ]
-            for cert, key in cert_locations:
-                if os.path.exists(cert) and os.path.exists(key):
-                    try:
-                        ssl_context = ssl.create_default_context(
-                            ssl.Purpose.CLIENT_AUTH
-                        )
-                        ssl_context.load_cert_chain(cert, key)
-                        logger.info(
-                            f"SSL enabled using fallback certificates from {cert}"
-                        )
-                        break
-                    except Exception as e:
-                        logger.error(
-                            f"Failed to load SSL certificates from {cert}: {e}"
-                        )
 
         # Integrate Audio Server Routes
         self.app.router.add_get(
@@ -515,35 +566,17 @@ class VoiceStreamingServer:
             "/stream/{stream_id}.mp3", self.audio_server.stream_handler
         )
         self.app.router.add_get("/stream/status", self.audio_server.status_handler)
-        self.app.router.add_get("/ca.crt", self.ca_download_handler)
+
+        # Add index route for Ingress UI
+        self.app.router.add_get("/", self.index_handler)
+
         logger.info("Audio Stream Server routes merged into main application")
 
         runner = web.AppRunner(self.app)
         await runner.setup()
 
-        # ── SMART PORT HUNTING ──
-        active_port = base_port
-        site = None
-        for i in range(10):  # Try up to 10 ports
-            try:
-                test_port = base_port + i
-                site = web.TCPSite(runner, host, test_port, ssl_context=ssl_context)
-                await site.start()
-                active_port = test_port
-                break
-            except OSError as e:
-                if "Address in use" in str(e) or e.errno == 98:
-                    logger.warning(
-                        f"Port {test_port} is busy, trying {test_port + 1}..."
-                    )
-                else:
-                    raise e
-
-        if not site:
-            logger.error(
-                f"Could not bind to any port in range {base_port}-{base_port + 10}"
-            )
-            return
+        site = web.TCPSite(runner, host, base_port)
+        await site.start()
 
         # ── STATE PERSISTENCE ──
         # Write the active port to a state file for the frontend to discover
@@ -553,8 +586,8 @@ class VoiceStreamingServer:
             with open(f"{state_dir}/server_state.json", "w") as f:
                 json.dump(
                     {
-                        "active_port": active_port,
-                        "ssl": ssl_context is not None,
+                        "active_port": base_port,
+                        "ssl": False,
                         "started_at": asyncio.get_event_loop().time(),
                     },
                     f,
@@ -564,10 +597,7 @@ class VoiceStreamingServer:
             logger.warning(f"Could not write server state: {e}")
 
         self.cleanup_task = asyncio.create_task(self.cleanup_stale_streams())
-        protocol = "https/wss" if ssl_context else "http/ws"
-        logger.info(
-            f"✅ Server successfully started on {protocol}://{host}:{active_port}"
-        )
+        logger.info(f"✅ Server successfully started on http://{host}:{base_port}")
 
         try:
             audio_port = int(os.environ.get("AUDIO_PORT", 8081))
