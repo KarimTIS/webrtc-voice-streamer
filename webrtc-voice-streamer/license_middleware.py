@@ -17,9 +17,6 @@ class LicenseManager:
     def __init__(self, ha_address=None, license_server_url=None):
         self.ha_address = ha_address or HA_ADDRESS
         self.license_server_url = license_server_url or LICENSE_SERVER_URL
-        logger.info(
-            f"[LicenseManager] Initialized with HA_ADDRESS: {self.ha_address} and LICENSE_SERVER: {self.license_server_url}"
-        )
 
     async def verify_license(self):
         """
@@ -28,7 +25,6 @@ class LicenseManager:
         """
         try:
             url_get_key = f"{self.ha_address.rstrip('/')}/api/get_key"
-            logger.info(f"[LicenseManager] Step 1: Fetching key from {url_get_key}")
 
             async with aiohttp.ClientSession() as session:
                 async with session.get(url_get_key, timeout=10) as resp:
@@ -37,27 +33,13 @@ class LicenseManager:
                         data = await resp.json()
                         if data and "key" in data:
                             key = data["key"]
-                            logger.info(
-                                "[LicenseManager] Step 2: Key found. Verifying with remote server..."
-                            )
-
                             verify_url = f"{self.license_server_url.rstrip('/')}/verify"
-                            logger.info(
-                                f"[LicenseManager] Hitting verify URL: {verify_url} with mac={key}"
-                            )
 
                             async with session.get(
                                 verify_url, params={"mac": key}, timeout=10
                             ) as response:
-                                logger.info(
-                                    f"[LicenseManager] Remote Server Response status: {response.status}"
-                                )
-
                                 if response.status == 200:
                                     res_json = await response.json()
-                                    logger.info(
-                                        f"[LicenseManager] Remote Server Response JSON: {res_json}"
-                                    )
                                     if res_json.get("status") == "success":
                                         logger.info(
                                             "[LicenseManager] ✅ License verification SUCCESSFUL"
@@ -110,18 +92,12 @@ async def license_middleware(request: web.Request, handler):
     if request.path in ["/health", "/metrics", "/ca.crt"]:
         return await handler(request)
 
-    logger.info(f"[Middleware] Incoming request: {request.method} {request.path}")
-
     # 2. Perform license check
     manager = LicenseManager()
     license_data = await manager.verify_license()
 
-    # Success
     if license_data and license_data.get("status") == "success":
         return await handler(request)
-
-    # Error Handling
-    logger.warning(f"[Middleware] Blocking request to {request.path} - License invalid")
 
     if license_data and isinstance(license_data, dict):
         status = license_data.get("status", 401)
