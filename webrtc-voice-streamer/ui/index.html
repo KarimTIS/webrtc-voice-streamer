@@ -275,7 +275,31 @@
                     '<option value="">Failed to load (' + e.message + ")</option>";
             }
         }
-        fetchMediaPlayers();
+
+        // Poll for the hass object before attempting to fetch media players
+        function waitForHassAndInitialize(maxRetries = 10, interval = 500) {
+            let retries = 0;
+
+            const checkHass = () => {
+                const hass = getHass();
+                if (hass) {
+                    console.log("Hass object found, loading media players...");
+                    fetchMediaPlayers();
+                } else if (retries < maxRetries) {
+                    retries++;
+                    console.log(`Waiting for hass object... (Attempt ${retries}/${maxRetries})`);
+                    setTimeout(checkHass, interval);
+                } else {
+                    console.warn("Hass object not found after retries. Falling back to backend API.");
+                    fetchMediaPlayers();
+                }
+            };
+
+            checkHass();
+        }
+
+        // Start the polling process
+        waitForHassAndInitialize();
 
         // Setup WebSocket
         function connectWebSocket() {
