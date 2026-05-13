@@ -1,5 +1,6 @@
 <!doctype html>
 <html lang="en" class="dark">
+
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -28,35 +29,47 @@
             scrollbar-width: thin;
             scrollbar-color: #334155 #0f172a;
         }
+
         ::-webkit-scrollbar {
             width: 8px;
         }
+
         ::-webkit-scrollbar-track {
             background: #0f172a;
         }
+
         ::-webkit-scrollbar-thumb {
             background: #334155;
             border-radius: 4px;
         }
+
         ::-webkit-scrollbar-thumb:hover {
             background: #475569;
         }
     </style>
 </head>
-<body class="min-h-screen flex items-center justify-center p-4 sm:p-6 bg-slate-900 text-slate-100 selection:bg-sky-500/30">
+
+<body
+    class="min-h-screen flex items-center justify-center p-4 sm:p-6 bg-slate-900 text-slate-100 selection:bg-sky-500/30">
     <div class="max-w-3xl w-full space-y-6">
         <!-- Voice Streamer Card -->
         <div class="bg-slate-800/80 backdrop-blur-md rounded-2xl p-5 sm:p-6 shadow-xl border border-slate-700">
             <div class="flex justify-between items-center mb-6">
                 <h2 class="text-2xl font-semibold text-white tracking-tight">Voice Streamer</h2>
-                <span id="ws-status" class="px-3 py-1 rounded-full text-sm font-medium bg-slate-700 text-slate-300 border border-slate-600 transition-colors duration-300">Disconnected</span>
+                <span id="ws-status"
+                    class="px-3 py-1 rounded-full text-sm font-medium bg-slate-700 text-slate-300 border border-slate-600 transition-colors duration-300">Disconnected</span>
             </div>
 
-            <canvas id="visualizer" class="w-full h-28 sm:h-32 bg-slate-900 rounded-xl mb-6 shadow-inner border border-slate-700/50" width="600" height="128"></canvas>
+            <canvas id="visualizer"
+                class="w-full h-28 sm:h-32 bg-slate-900 rounded-xl mb-6 shadow-inner border border-slate-700/50"
+                width="600" height="128"></canvas>
 
-            <button id="btn-mic" class="w-full bg-sky-500 hover:bg-sky-600 text-white border-none py-3 px-6 rounded-xl text-lg font-medium cursor-pointer transition-all duration-200 flex items-center justify-center gap-2 shadow-lg shadow-sky-500/20 active:scale-[0.98]">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" />
+            <button id="btn-mic"
+                class="w-full bg-sky-500 hover:bg-sky-600 text-white border-none py-3 px-6 rounded-xl text-lg font-medium cursor-pointer transition-all duration-200 flex items-center justify-center gap-2 shadow-lg shadow-sky-500/20 active:scale-[0.98]">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24"
+                    stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" />
                 </svg>
                 <span>Start Microphone</span>
             </button>
@@ -69,48 +82,68 @@
 
             <div class="space-y-5">
                 <div>
-                    <label for="stream-url" class="block text-sm font-medium text-slate-400 mb-2">Internal Audio Stream URL</label>
-                    <input type="text" id="stream-url" placeholder="http://192.168.x.x:8081/stream/latest.mp3" class="w-full p-3 bg-slate-900 border border-slate-600 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-transparent transition-all" />
-                    <p class="text-xs text-slate-500 mt-2">This must be reachable by your smart speakers on the local network.</p>
+                    <label for="stream-url" class="block text-sm font-medium text-slate-400 mb-2">Internal Audio Stream
+                        URL</label>
+                    <input type="text" id="stream-url" placeholder="http://192.168.x.x:8081/stream/latest.mp3"
+                        class="w-full p-3 bg-slate-900 border border-slate-600 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-transparent transition-all" />
+                    <p class="text-xs text-slate-500 mt-2">This must be reachable by your smart speakers on the local
+                        network.</p>
                 </div>
 
                 <div>
-                    <label for="media-player-select" class="block text-sm font-medium text-slate-400 mb-2">Select Media Player</label>
-                    <select id="media-player-select" class="w-full p-3 bg-slate-900 border border-slate-600 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-transparent transition-all cursor-pointer">
+                    <label for="media-player-select" class="block text-sm font-medium text-slate-400 mb-2">Select Media
+                        Player</label>
+                    <select id="media-player-select"
+                        class="w-full p-3 bg-slate-900 border border-slate-600 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-transparent transition-all cursor-pointer">
                         <option value="">Loading...</option>
                     </select>
                 </div>
 
                 <div class="flex pt-2">
-                    <button id="btn-media-toggle" class="w-full bg-sky-500 hover:bg-sky-600 text-white border-none py-3 px-6 rounded-xl font-medium cursor-pointer transition-all duration-200 flex items-center justify-center gap-2 shadow-lg shadow-sky-500/20 active:scale-[0.98]">
-                        <svg id="media-icon-play" xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" clip-rule="evenodd" />
+                    <button id="btn-media-toggle"
+                        class="w-full bg-sky-500 hover:bg-sky-600 text-white border-none py-3 px-6 rounded-xl font-medium cursor-pointer transition-all duration-200 flex items-center justify-center gap-2 shadow-lg shadow-sky-500/20 active:scale-[0.98]">
+                        <svg id="media-icon-play" xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20"
+                            fill="currentColor">
+                            <path fill-rule="evenodd"
+                                d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z"
+                                clip-rule="evenodd" />
                         </svg>
-                        <svg id="media-icon-stop" xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 hidden" viewBox="0 0 20 20" fill="currentColor">
-                            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8 7a1 1 0 00-1 1v4a1 1 0 001 1h4a1 1 0 001-1V8a1 1 0 00-1-1H8z" clip-rule="evenodd" />
+                        <svg id="media-icon-stop" xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 hidden"
+                            viewBox="0 0 20 20" fill="currentColor">
+                            <path fill-rule="evenodd"
+                                d="M10 18a8 8 0 100-16 8 8 0 000 16zM8 7a1 1 0 00-1 1v4a1 1 0 001 1h4a1 1 0 001-1V8a1 1 0 00-1-1H8z"
+                                clip-rule="evenodd" />
                         </svg>
-                        <svg id="media-icon-loading" class="animate-spin h-5 w-5 hidden" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        <svg id="media-icon-loading" class="animate-spin h-5 w-5 hidden"
+                            xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4">
+                            </circle>
+                            <path class="opacity-75" fill="currentColor"
+                                d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z">
+                            </path>
                         </svg>
                         <span id="media-toggle-text">Play Stream</span>
                     </button>
                 </div>
             </div>
         </div>
-        
+
         <!-- Error Log Section -->
         <div id="error-log-container" class="hidden bg-red-950/40 border border-red-900/50 rounded-2xl p-5 shadow-lg">
             <div class="flex items-center justify-between mb-3">
                 <h3 class="text-red-400 font-semibold flex items-center gap-2">
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                        <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd" />
+                        <path fill-rule="evenodd"
+                            d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z"
+                            clip-rule="evenodd" />
                     </svg>
                     Error Logs
                 </h3>
-                <button id="clear-errors-btn" class="text-red-400 hover:text-red-300 text-sm px-3 py-1 rounded-lg hover:bg-red-900/30 border border-transparent hover:border-red-900/50 transition-all">Clear</button>
+                <button id="clear-errors-btn"
+                    class="text-red-400 hover:text-red-300 text-sm px-3 py-1 rounded-lg hover:bg-red-900/30 border border-transparent hover:border-red-900/50 transition-all">Clear</button>
             </div>
-            <div id="error-logs" class="space-y-2 max-h-48 overflow-y-auto font-mono text-xs sm:text-sm text-red-300/90 pr-2">
+            <div id="error-logs"
+                class="space-y-2 max-h-48 overflow-y-auto font-mono text-xs sm:text-sm text-red-300/90 pr-2">
             </div>
         </div>
     </div>
@@ -148,11 +181,11 @@
             const time = new Date().toLocaleTimeString();
             const logEntry = document.createElement("div");
             logEntry.className = "py-1.5 border-b border-red-900/30 last:border-0";
-            
+
             let errMsg = err ? (err.message || err.toString()) : "";
             // Avoid duplicate error message strings
             if (errMsg === message) errMsg = "";
-            
+
             logEntry.textContent = `[${time}] ${message} ${errMsg ? " - " + errMsg : ""}`;
             errorLogs.prepend(logEntry);
             errorLogContainer.classList.remove("hidden");
@@ -166,7 +199,7 @@
 
         // Initialize defaults
         const hostname = window.location.hostname || 'homeassistant.local';
-        streamUrlInput.value = `http://${hostname}:8081/stream/latest.mp3`;
+        streamUrlInput.value = `http://homeassistant.local:8081/stream/latest.mp3`;
 
         // Helper to get HA object from parent window
         function getHass() {
@@ -251,7 +284,7 @@
             const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
             const wsPath = window.location.pathname.replace(/\/$/, "") + "/ws";
             const wsUrl = `${protocol}//${window.location.host}${wsPath}`;
-            
+
             console.log(`Attempting WebSocket connection to: ${wsUrl}`);
             ws = new WebSocket(wsUrl);
 
@@ -344,7 +377,7 @@
                 console.log("Microphone access granted.", mediaStream);
 
                 peerConnection = new RTCPeerConnection({ iceServers: [] });
-                
+
                 peerConnection.oniceconnectionstatechange = () => {
                     console.log("ICE Connection State Change:", peerConnection.iceConnectionState);
                     if (peerConnection.iceConnectionState === "failed") {
@@ -402,7 +435,7 @@
             }
 
             canvasCtx.clearRect(0, 0, visualizer.width, visualizer.height);
-            
+
             // Reset UI state to "Start"
             btnMic.innerHTML = `
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -460,7 +493,7 @@
                 mediaIconLoading.classList.add("hidden");
             }
         }
-        
+
         function updateMediaButtonState() {
             if (isMediaPlaying) {
                 // Set to Stop style
@@ -480,7 +513,7 @@
         btnMediaToggle.onclick = async () => {
             const entity_id = mediaPlayerSelect.value;
             const media_content_id = streamUrlInput.value;
-            
+
             if (!entity_id) {
                 logError("Validation failed: Please select a media player first.");
                 return;
@@ -524,7 +557,7 @@
                         logError("Error stopping media via backend API.", e);
                     }
                 }
-                
+
                 if (success) {
                     isMediaPlaying = false;
                 }
@@ -534,7 +567,7 @@
                 // Play action
                 console.log(`Play requested. Target player: ${entity_id}, URL: ${media_content_id}`);
                 setMediaLoadingState(true, 'play');
-                
+
                 let success = false;
                 const hass = getHass();
                 if (hass) {
@@ -578,4 +611,5 @@
         };
     </script>
 </body>
+
 </html>
