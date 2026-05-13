@@ -1,199 +1,116 @@
 <!doctype html>
-<html lang="en">
-
+<html lang="en" class="dark">
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>WebRTC Voice Streamer</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        surface: '#1e293b', // slate-800
+                        bg: '#0f172a', // slate-900
+                    }
+                }
+            }
+        }
+    </script>
     <style>
-        :root {
-            --primary: #03a9f4;
-            --primary-dark: #0288d1;
-            --bg-color: #121212;
-            --surface: #1e1e1e;
-            --text: #e0e0e0;
-            --text-secondary: #a0a0a0;
-            --danger: #f44336;
-            --success: #4caf50;
-            --border: #333;
-        }
-
         body {
-            font-family:
-                -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
-                "Helvetica Neue", Arial, sans-serif;
-            background-color: var(--bg-color);
-            color: var(--text);
-            margin: 0;
-            padding: 20px;
-            display: flex;
-            justify-content: center;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            background-color: #0f172a;
+            color: #f8fafc;
+            /* Scrollbar styling */
+            scrollbar-width: thin;
+            scrollbar-color: #334155 #0f172a;
         }
-
-        .container {
-            max-width: 800px;
-            width: 100%;
-            display: grid;
-            gap: 20px;
-            grid-template-columns: 1fr;
+        ::-webkit-scrollbar {
+            width: 8px;
         }
-
-        .card {
-            background-color: var(--surface);
-            border-radius: 12px;
-            padding: 24px;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
-            border: 1px solid var(--border);
+        ::-webkit-scrollbar-track {
+            background: #0f172a;
         }
-
-        h1,
-        h2,
-        h3 {
-            margin-top: 0;
-            font-weight: 500;
+        ::-webkit-scrollbar-thumb {
+            background: #334155;
+            border-radius: 4px;
         }
-
-        .header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 20px;
-        }
-
-        .status-badge {
-            padding: 6px 12px;
-            border-radius: 16px;
-            font-size: 14px;
-            font-weight: 500;
-            background-color: var(--border);
-        }
-
-        .status-badge.connected {
-            background-color: rgba(76, 175, 80, 0.2);
-            color: var(--success);
-        }
-
-        .status-badge.error {
-            background-color: rgba(244, 67, 54, 0.2);
-            color: var(--danger);
-        }
-
-        .status-badge.connecting {
-            background-color: rgba(3, 169, 244, 0.2);
-            color: var(--primary);
-        }
-
-        .btn {
-            background-color: var(--primary);
-            color: white;
-            border: none;
-            padding: 12px 24px;
-            border-radius: 8px;
-            font-size: 16px;
-            cursor: pointer;
-            transition: background 0.2s;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            gap: 8px;
-            width: 100%;
-            font-weight: 500;
-        }
-
-        .btn:hover {
-            background-color: var(--primary-dark);
-        }
-
-        .btn:disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
-        }
-
-        .btn.danger {
-            background-color: var(--danger);
-        }
-
-        .form-group {
-            margin-bottom: 16px;
-        }
-
-        label {
-            display: block;
-            margin-bottom: 8px;
-            color: var(--text-secondary);
-            font-size: 14px;
-        }
-
-        select,
-        input {
-            width: 100%;
-            padding: 10px;
-            background-color: var(--bg-color);
-            border: 1px solid var(--border);
-            color: var(--text);
-            border-radius: 6px;
-            font-size: 16px;
-            box-sizing: border-box;
-        }
-
-        canvas {
-            width: 100%;
-            height: 100px;
-            background-color: var(--bg-color);
-            border-radius: 8px;
-            margin-bottom: 20px;
-        }
-
-        .media-players-list {
-            margin-top: 20px;
+        ::-webkit-scrollbar-thumb:hover {
+            background: #475569;
         }
     </style>
 </head>
-
-<body>
-    <div class="container">
-        <div class="card">
-            <div class="header">
-                <h2>Voice Streamer</h2>
-                <span id="ws-status" class="status-badge disconnected">Disconnected</span>
+<body class="min-h-screen flex items-center justify-center p-4 sm:p-6 bg-slate-900 text-slate-100 selection:bg-sky-500/30">
+    <div class="max-w-3xl w-full space-y-6">
+        <!-- Voice Streamer Card -->
+        <div class="bg-slate-800/80 backdrop-blur-md rounded-2xl p-5 sm:p-6 shadow-xl border border-slate-700">
+            <div class="flex justify-between items-center mb-6">
+                <h2 class="text-2xl font-semibold text-white tracking-tight">Voice Streamer</h2>
+                <span id="ws-status" class="px-3 py-1 rounded-full text-sm font-medium bg-slate-700 text-slate-300 border border-slate-600 transition-colors duration-300">Disconnected</span>
             </div>
 
-            <canvas id="visualizer" width="600" height="100"></canvas>
+            <canvas id="visualizer" class="w-full h-28 sm:h-32 bg-slate-900 rounded-xl mb-6 shadow-inner border border-slate-700/50" width="600" height="128"></canvas>
 
-            <button id="btn-mic" class="btn">Start Microphone</button>
-            <p id="error-msg" style="color: var(--danger); font-size: 14px; margin-top: 10px"></p>
+            <button id="btn-mic" class="w-full bg-sky-500 hover:bg-sky-600 text-white border-none py-3 px-6 rounded-xl text-lg font-medium cursor-pointer transition-all duration-200 flex items-center justify-center gap-2 shadow-lg shadow-sky-500/20 active:scale-[0.98]">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" />
+                </svg>
+                <span>Start Microphone</span>
+            </button>
+            <p id="mic-error-msg" class="text-red-400 text-sm mt-3 text-center empty:hidden"></p>
         </div>
 
-        <div class="card">
-            <h2>Play to Media Player</h2>
+        <!-- Media Player Card -->
+        <div class="bg-slate-800/80 backdrop-blur-md rounded-2xl p-5 sm:p-6 shadow-xl border border-slate-700">
+            <h2 class="text-xl font-semibold text-white mb-6">Play to Media Player</h2>
 
-            <div class="form-group">
-                <label for="stream-url">Internal Audio Stream URL</label>
-                <input type="text" id="stream-url" placeholder="http://192.168.x.x:8081/stream/latest.mp3" />
-                <small style="
-              color: var(--text-secondary);
-              display: block;
-              margin-top: 4px;
-            ">This must be reachable by your smart speakers on the local
-                    network.</small>
+            <div class="space-y-5">
+                <div>
+                    <label for="stream-url" class="block text-sm font-medium text-slate-400 mb-2">Internal Audio Stream URL</label>
+                    <input type="text" id="stream-url" placeholder="http://192.168.x.x:8081/stream/latest.mp3" class="w-full p-3 bg-slate-900 border border-slate-600 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-transparent transition-all" />
+                    <p class="text-xs text-slate-500 mt-2">This must be reachable by your smart speakers on the local network.</p>
+                </div>
+
+                <div>
+                    <label for="media-player-select" class="block text-sm font-medium text-slate-400 mb-2">Select Media Player</label>
+                    <select id="media-player-select" class="w-full p-3 bg-slate-900 border border-slate-600 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-transparent transition-all cursor-pointer">
+                        <option value="">Loading...</option>
+                    </select>
+                </div>
+
+                <div class="flex pt-2">
+                    <button id="btn-media-toggle" class="w-full bg-sky-500 hover:bg-sky-600 text-white border-none py-3 px-6 rounded-xl font-medium cursor-pointer transition-all duration-200 flex items-center justify-center gap-2 shadow-lg shadow-sky-500/20 active:scale-[0.98]">
+                        <svg id="media-icon-play" xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" clip-rule="evenodd" />
+                        </svg>
+                        <svg id="media-icon-stop" xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 hidden" viewBox="0 0 20 20" fill="currentColor">
+                            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8 7a1 1 0 00-1 1v4a1 1 0 001 1h4a1 1 0 001-1V8a1 1 0 00-1-1H8z" clip-rule="evenodd" />
+                        </svg>
+                        <svg id="media-icon-loading" class="animate-spin h-5 w-5 hidden" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                        <span id="media-toggle-text">Play Stream</span>
+                    </button>
+                </div>
             </div>
-
-            <div class="form-group">
-                <label for="media-player-select">Select Media Player</label>
-                <select id="media-player-select">
-                    <option value="">Loading...</option>
-                </select>
+        </div>
+        
+        <!-- Error Log Section -->
+        <div id="error-log-container" class="hidden bg-red-950/40 border border-red-900/50 rounded-2xl p-5 shadow-lg">
+            <div class="flex items-center justify-between mb-3">
+                <h3 class="text-red-400 font-semibold flex items-center gap-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                        <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd" />
+                    </svg>
+                    Error Logs
+                </h3>
+                <button id="clear-errors-btn" class="text-red-400 hover:text-red-300 text-sm px-3 py-1 rounded-lg hover:bg-red-900/30 border border-transparent hover:border-red-900/50 transition-all">Clear</button>
             </div>
-
-            <div style="display: flex; gap: 10px">
-                <button id="btn-play" class="btn">Play Stream</button>
-                <button id="btn-stop" class="btn danger" style="
-              background-color: transparent;
-              border: 1px solid var(--danger);
-              color: var(--danger);
-            ">
-                    Stop
-                </button>
+            <div id="error-logs" class="space-y-2 max-h-48 overflow-y-auto font-mono text-xs sm:text-sm text-red-300/90 pr-2">
             </div>
         </div>
     </div>
@@ -205,21 +122,50 @@
         let audioContext = null;
         let analyser = null;
         let animationFrame = null;
-        let streamId = null;
 
         const wsStatus = document.getElementById("ws-status");
         const btnMic = document.getElementById("btn-mic");
-        const errorMsg = document.getElementById("error-msg");
+        const micErrorMsg = document.getElementById("mic-error-msg");
         const visualizer = document.getElementById("visualizer");
         const canvasCtx = visualizer.getContext("2d");
 
         const streamUrlInput = document.getElementById("stream-url");
         const mediaPlayerSelect = document.getElementById("media-player-select");
-        const btnPlay = document.getElementById("btn-play");
-        const btnStop = document.getElementById("btn-stop");
+        const btnMediaToggle = document.getElementById("btn-media-toggle");
+        const mediaIconPlay = document.getElementById("media-icon-play");
+        const mediaIconStop = document.getElementById("media-icon-stop");
+        const mediaIconLoading = document.getElementById("media-icon-loading");
+        const mediaToggleText = document.getElementById("media-toggle-text");
+        let isMediaPlaying = false;
+
+        const errorLogContainer = document.getElementById("error-log-container");
+        const errorLogs = document.getElementById("error-logs");
+        const clearErrorsBtn = document.getElementById("clear-errors-btn");
+
+        // UI Error Logging Function
+        function logError(message, err = null) {
+            console.error(message, err || "");
+            const time = new Date().toLocaleTimeString();
+            const logEntry = document.createElement("div");
+            logEntry.className = "py-1.5 border-b border-red-900/30 last:border-0";
+            
+            let errMsg = err ? (err.message || err.toString()) : "";
+            // Avoid duplicate error message strings
+            if (errMsg === message) errMsg = "";
+            
+            logEntry.textContent = `[${time}] ${message} ${errMsg ? " - " + errMsg : ""}`;
+            errorLogs.prepend(logEntry);
+            errorLogContainer.classList.remove("hidden");
+        }
+
+        clearErrorsBtn.onclick = () => {
+            errorLogs.innerHTML = "";
+            errorLogContainer.classList.add("hidden");
+            console.log("Error logs cleared.");
+        };
 
         // Initialize defaults
-        const hostname = 'homeassistant.local';
+        const hostname = window.location.hostname || 'homeassistant.local';
         streamUrlInput.value = `http://${hostname}:8081/stream/latest.mp3`;
 
         // Helper to get HA object from parent window
@@ -239,12 +185,13 @@
 
         // Fetch Media Players
         async function fetchMediaPlayers() {
+            console.log("Fetching media players...");
             try {
                 const hass = getHass();
                 let players = [];
 
                 if (hass) {
-                    // Fast local DOM extraction!
+                    console.log("Using HA frontend object to fetch media players.");
                     players = Object.values(hass.states)
                         .filter((entity) => entity.entity_id.startsWith("media_player."))
                         .map((entity) => ({
@@ -253,16 +200,19 @@
                             state: entity.state
                         }));
                 } else {
-                    // Fallback to backend API
+                    console.log("HA frontend object not found. Using backend API /api/media_players.");
                     const res = await fetch("./api/media_players");
+                    if (!res.ok) {
+                        throw new Error(`HTTP error! status: ${res.status}`);
+                    }
                     players = await res.json();
                     if (!Array.isArray(players)) {
                         throw new Error(players.error || "Invalid response from server");
                     }
                 }
 
-                mediaPlayerSelect.innerHTML =
-                    '<option value="">-- Select a Media Player --</option>';
+                console.log(`Found ${players.length} media players.`);
+                mediaPlayerSelect.innerHTML = '<option value="">-- Select a Media Player --</option>';
                 players.forEach((p) => {
                     const opt = document.createElement("option");
                     opt.value = p.entity_id;
@@ -270,20 +220,17 @@
                     mediaPlayerSelect.appendChild(opt);
                 });
             } catch (e) {
-                console.error("Failed to load media players", e);
-                mediaPlayerSelect.innerHTML =
-                    '<option value="">Failed to load (' + e.message + ")</option>";
+                logError("Failed to load media players", e);
+                mediaPlayerSelect.innerHTML = '<option value="">Failed to load</option>';
             }
         }
 
-        // Poll for the hass object before attempting to fetch media players
         function waitForHassAndInitialize(maxRetries = 10, interval = 500) {
             let retries = 0;
-
             const checkHass = () => {
                 const hass = getHass();
                 if (hass) {
-                    console.log("Hass object found, loading media players...");
+                    console.log("Hass object found immediately. Proceeding to fetch media players.");
                     fetchMediaPlayers();
                 } else if (retries < maxRetries) {
                     retries++;
@@ -294,60 +241,77 @@
                     fetchMediaPlayers();
                 }
             };
-
             checkHass();
         }
 
-        // Start the polling process
         waitForHassAndInitialize();
 
         // Setup WebSocket
         function connectWebSocket() {
             const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
-            // Connect to the relative path, replacing any trailing slash
             const wsPath = window.location.pathname.replace(/\/$/, "") + "/ws";
             const wsUrl = `${protocol}//${window.location.host}${wsPath}`;
-
+            
+            console.log(`Attempting WebSocket connection to: ${wsUrl}`);
             ws = new WebSocket(wsUrl);
 
             ws.onopen = () => {
+                console.log("WebSocket connection opened successfully.");
                 wsStatus.textContent = "Connected";
-                wsStatus.className = "status-badge connected";
+                wsStatus.className = "px-3 py-1 rounded-full text-sm font-medium bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 transition-colors duration-300";
             };
 
             ws.onclose = () => {
+                console.log("WebSocket connection closed. Attempting to reconnect in 3 seconds...");
                 wsStatus.textContent = "Disconnected";
-                wsStatus.className = "status-badge disconnected";
+                wsStatus.className = "px-3 py-1 rounded-full text-sm font-medium bg-red-500/20 text-red-400 border border-red-500/30 transition-colors duration-300";
                 stopMic();
                 setTimeout(connectWebSocket, 3000);
             };
 
-            ws.onmessage = async (e) => {
-                const msg = JSON.parse(e.data);
+            ws.onerror = (err) => {
+                logError("WebSocket encountered an error.", err);
+            };
 
-                if (msg.type === "sender_ready") {
-                    if (peerConnection) {
-                        const offer = await peerConnection.createOffer({
-                            offerToReceiveAudio: false,
-                            offerToReceiveVideo: false,
-                        });
-                        await peerConnection.setLocalDescription(offer);
-                        ws.send(
-                            JSON.stringify({
+            ws.onmessage = async (e) => {
+                console.log("WebSocket message received:", e.data);
+                try {
+                    const msg = JSON.parse(e.data);
+
+                    if (msg.type === "sender_ready") {
+                        console.log("Sender ready received, creating WebRTC offer...");
+                        if (peerConnection) {
+                            const offer = await peerConnection.createOffer({
+                                offerToReceiveAudio: false,
+                                offerToReceiveVideo: false,
+                            });
+                            await peerConnection.setLocalDescription(offer);
+                            console.log("Sending WebRTC offer over WebSocket...");
+                            ws.send(JSON.stringify({
                                 type: "webrtc_offer",
                                 offer: {
                                     sdp: peerConnection.localDescription.sdp,
                                     type: peerConnection.localDescription.type,
                                 },
-                            }),
-                        );
+                            }));
+                        } else {
+                            console.warn("Peer connection not initialized when sender_ready received.");
+                        }
+                    } else if (msg.type === "webrtc_answer") {
+                        console.log("Received WebRTC answer. Setting remote description...");
+                        if (peerConnection) {
+                            await peerConnection.setRemoteDescription(new RTCSessionDescription(msg.answer));
+                            console.log("Remote description set successfully. WebRTC connection established.");
+                        } else {
+                            console.warn("Peer connection not initialized when webrtc_answer received.");
+                        }
+                    } else if (msg.type === "error") {
+                        logError("Received error from signaling server: " + msg.message);
+                    } else {
+                        console.log("Received unknown message type:", msg.type);
                     }
-                } else if (msg.type === "webrtc_answer") {
-                    if (peerConnection) {
-                        await peerConnection.setRemoteDescription(
-                            new RTCSessionDescription(msg.answer),
-                        );
-                    }
+                } catch (err) {
+                    logError("Failed to handle WebSocket message.", err);
                 }
             };
         }
@@ -356,6 +320,7 @@
 
         // Start/Stop Mic
         btnMic.onclick = async () => {
+            console.log("Microphone button clicked. Current state:", mediaStream ? "Active" : "Inactive");
             if (mediaStream) {
                 stopMic();
             } else {
@@ -364,7 +329,8 @@
         };
 
         async function startMic() {
-            errorMsg.textContent = "";
+            micErrorMsg.textContent = "";
+            console.log("Requesting microphone access from browser...");
             try {
                 mediaStream = await navigator.mediaDevices.getUserMedia({
                     audio: {
@@ -375,45 +341,80 @@
                         channelCount: 1,
                     },
                 });
+                console.log("Microphone access granted.", mediaStream);
 
                 peerConnection = new RTCPeerConnection({ iceServers: [] });
+                
+                peerConnection.oniceconnectionstatechange = () => {
+                    console.log("ICE Connection State Change:", peerConnection.iceConnectionState);
+                    if (peerConnection.iceConnectionState === "failed") {
+                        logError("WebRTC ICE Connection failed.");
+                    }
+                };
 
                 mediaStream.getAudioTracks().forEach((track) => {
+                    console.log("Adding audio track to peer connection:", track.label);
                     peerConnection.addTrack(track, mediaStream);
                 });
 
                 setupVisualization(mediaStream);
 
+                console.log("Sending start_sending command over WebSocket.");
                 ws.send(JSON.stringify({ type: "start_sending" }));
 
-                btnMic.textContent = "Stop Microphone";
-                btnMic.classList.add("danger");
+                // Update UI state to "Stop"
+                btnMic.innerHTML = `
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 10a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1h-4a1 1 0 01-1-1v-4z" />
+                    </svg>
+                    <span>Stop Microphone</span>
+                `;
+                btnMic.className = "w-full bg-red-500 hover:bg-red-600 text-white border-none py-3 px-6 rounded-xl text-lg font-medium cursor-pointer transition-all duration-200 flex items-center justify-center gap-2 shadow-lg shadow-red-500/20 active:scale-[0.98]";
             } catch (e) {
-                console.error(e);
-                errorMsg.textContent = "Error: " + e.message;
+                logError("Failed to start microphone", e);
+                micErrorMsg.textContent = "Error: " + e.message;
             }
         }
 
         function stopMic() {
+            console.log("Stopping microphone and cleaning up WebRTC resources...");
             if (mediaStream) {
-                mediaStream.getTracks().forEach((t) => t.stop());
+                mediaStream.getTracks().forEach((t) => {
+                    console.log("Stopping track:", t.kind, t.label);
+                    t.stop();
+                });
                 mediaStream = null;
+                console.log("Media stream stopped.");
             }
             if (peerConnection) {
                 peerConnection.close();
                 peerConnection = null;
+                console.log("Peer connection closed.");
             }
             if (ws && ws.readyState === WebSocket.OPEN) {
+                console.log("Sending stop_stream command over WebSocket.");
                 ws.send(JSON.stringify({ type: "stop_stream" }));
             }
-            if (animationFrame) cancelAnimationFrame(animationFrame);
+            if (animationFrame) {
+                cancelAnimationFrame(animationFrame);
+                animationFrame = null;
+            }
 
             canvasCtx.clearRect(0, 0, visualizer.width, visualizer.height);
-            btnMic.textContent = "Start Microphone";
-            btnMic.classList.remove("danger");
+            
+            // Reset UI state to "Start"
+            btnMic.innerHTML = `
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" />
+                </svg>
+                <span>Start Microphone</span>
+            `;
+            btnMic.className = "w-full bg-sky-500 hover:bg-sky-600 text-white border-none py-3 px-6 rounded-xl text-lg font-medium cursor-pointer transition-all duration-200 flex items-center justify-center gap-2 shadow-lg shadow-sky-500/20 active:scale-[0.98]";
         }
 
         function setupVisualization(stream) {
+            console.log("Setting up audio visualization canvas.");
             audioContext = new (window.AudioContext || window.webkitAudioContext)();
             analyser = audioContext.createAnalyser();
             analyser.fftSize = 256;
@@ -427,7 +428,7 @@
                 animationFrame = requestAnimationFrame(draw);
                 analyser.getByteFrequencyData(dataArray);
 
-                canvasCtx.fillStyle = "#121212";
+                canvasCtx.fillStyle = "#0f172a"; // Tailwind slate-900 equivalent for canvas clear
                 canvasCtx.fillRect(0, 0, visualizer.width, visualizer.height);
 
                 const barWidth = (visualizer.width / bufferLength) * 2.5;
@@ -435,13 +436,10 @@
 
                 for (let i = 0; i < bufferLength; i++) {
                     const barHeight = (dataArray[i] / 255) * visualizer.height;
-                    canvasCtx.fillStyle = `rgb(${barHeight + 100}, 169, 244)`;
-                    canvasCtx.fillRect(
-                        x,
-                        visualizer.height - barHeight,
-                        barWidth,
-                        barHeight,
-                    );
+                    // Draw bars using sky-500 base color (rgba 14, 165, 233)
+                    const opacity = Math.max(0.15, dataArray[i] / 255);
+                    canvasCtx.fillStyle = `rgba(14, 165, 233, ${opacity})`;
+                    canvasCtx.fillRect(x, visualizer.height - barHeight, barWidth, barHeight);
                     x += barWidth + 1;
                 }
             }
@@ -449,70 +447,135 @@
         }
 
         // Media Player Controls
-        btnPlay.onclick = async () => {
+        function setMediaLoadingState(isLoading, action) {
+            btnMediaToggle.disabled = isLoading;
+            if (isLoading) {
+                btnMediaToggle.classList.add("opacity-75", "cursor-not-allowed");
+                mediaIconPlay.classList.add("hidden");
+                mediaIconStop.classList.add("hidden");
+                mediaIconLoading.classList.remove("hidden");
+                mediaToggleText.textContent = action === 'play' ? "Starting..." : "Stopping...";
+            } else {
+                btnMediaToggle.classList.remove("opacity-75", "cursor-not-allowed");
+                mediaIconLoading.classList.add("hidden");
+            }
+        }
+        
+        function updateMediaButtonState() {
+            if (isMediaPlaying) {
+                // Set to Stop style
+                btnMediaToggle.className = "w-full bg-red-500 hover:bg-red-600 text-white border-none py-3 px-6 rounded-xl font-medium cursor-pointer transition-all duration-200 flex items-center justify-center gap-2 shadow-lg shadow-red-500/20 active:scale-[0.98]";
+                mediaIconPlay.classList.add("hidden");
+                mediaIconStop.classList.remove("hidden");
+                mediaToggleText.textContent = "Stop Media";
+            } else {
+                // Set to Play style
+                btnMediaToggle.className = "w-full bg-sky-500 hover:bg-sky-600 text-white border-none py-3 px-6 rounded-xl font-medium cursor-pointer transition-all duration-200 flex items-center justify-center gap-2 shadow-lg shadow-sky-500/20 active:scale-[0.98]";
+                mediaIconStop.classList.add("hidden");
+                mediaIconPlay.classList.remove("hidden");
+                mediaToggleText.textContent = "Play Stream";
+            }
+        }
+
+        btnMediaToggle.onclick = async () => {
             const entity_id = mediaPlayerSelect.value;
             const media_content_id = streamUrlInput.value;
-            if (!entity_id) return alert("Select a media player");
-            if (!media_content_id) return alert("Enter stream URL");
+            
+            if (!entity_id) {
+                logError("Validation failed: Please select a media player first.");
+                return;
+            }
+            if (!isMediaPlaying && !media_content_id) {
+                logError("Validation failed: Please enter a stream URL.");
+                return;
+            }
 
-            const hass = getHass();
-            if (hass) {
-                try {
-                    await hass.callService("media_player", "play_media", {
-                        entity_id: entity_id,
-                        media_content_id: media_content_id,
-                        media_content_type: "music"
-                    });
-                    return;
-                } catch (e) {
-                    alert("Error playing media via HA Frontend: " + e.message);
-                    return;
+            if (isMediaPlaying) {
+                // Stop action
+                console.log(`Stop requested. Target player: ${entity_id}`);
+                setMediaLoadingState(true, 'stop');
+
+                let success = false;
+                const hass = getHass();
+                if (hass) {
+                    console.log("Using HA Frontend to invoke media_player.media_stop service.");
+                    try {
+                        await hass.callService("media_player", "media_stop", { entity_id });
+                        console.log("HA Frontend media_stop service call successful.");
+                        success = true;
+                    } catch (e) {
+                        logError("Error stopping media via HA Frontend service call.", e);
+                    }
+                } else {
+                    console.log("HA Frontend object not available. Falling back to backend /api/stop_media.");
+                    try {
+                        const res = await fetch("./api/stop_media", {
+                            method: "POST",
+                            headers: { "Content-Type": "application/json" },
+                            body: JSON.stringify({ entity_id }),
+                        });
+                        if (!res.ok) {
+                            const errorText = await res.text();
+                            throw new Error(`Status ${res.status}: ${errorText}`);
+                        }
+                        console.log("Backend stop_media API call successful.");
+                        success = true;
+                    } catch (e) {
+                        logError("Error stopping media via backend API.", e);
+                    }
                 }
-            }
-
-            // Fallback to backend
-            try {
-                const res = await fetch("./api/play_media", {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ entity_id, media_content_id }),
-                });
-                if (!res.ok) throw new Error(await res.text());
-            } catch (e) {
-                alert("Error playing media: " + e.message);
-            }
-        };
-
-        btnStop.onclick = async () => {
-            const entity_id = mediaPlayerSelect.value;
-            if (!entity_id) return alert("Select a media player");
-
-            const hass = getHass();
-            if (hass) {
-                try {
-                    await hass.callService("media_player", "media_stop", {
-                        entity_id: entity_id
-                    });
-                    return;
-                } catch (e) {
-                    alert("Error stopping media via HA Frontend: " + e.message);
-                    return;
+                
+                if (success) {
+                    isMediaPlaying = false;
                 }
-            }
+                setMediaLoadingState(false, 'stop');
+                updateMediaButtonState();
+            } else {
+                // Play action
+                console.log(`Play requested. Target player: ${entity_id}, URL: ${media_content_id}`);
+                setMediaLoadingState(true, 'play');
+                
+                let success = false;
+                const hass = getHass();
+                if (hass) {
+                    console.log("Using HA Frontend to invoke media_player.play_media service.");
+                    try {
+                        await hass.callService("media_player", "play_media", {
+                            entity_id: entity_id,
+                            media_content_id: media_content_id,
+                            media_content_type: "music"
+                        });
+                        console.log("HA Frontend play_media service call successful.");
+                        success = true;
+                    } catch (e) {
+                        logError("Error playing media via HA Frontend service call.", e);
+                    }
+                } else {
+                    console.log("HA Frontend object not available. Falling back to backend /api/play_media.");
+                    try {
+                        const res = await fetch("./api/play_media", {
+                            method: "POST",
+                            headers: { "Content-Type": "application/json" },
+                            body: JSON.stringify({ entity_id, media_content_id }),
+                        });
+                        if (!res.ok) {
+                            const errorText = await res.text();
+                            throw new Error(`Status ${res.status}: ${errorText}`);
+                        }
+                        console.log("Backend play_media API call successful.");
+                        success = true;
+                    } catch (e) {
+                        logError("Error playing media via backend API.", e);
+                    }
+                }
 
-            // Fallback to backend
-            try {
-                const res = await fetch("./api/stop_media", {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ entity_id }),
-                });
-                if (!res.ok) throw new Error(await res.text());
-            } catch (e) {
-                alert("Error stopping media: " + e.message);
+                if (success) {
+                    isMediaPlaying = true;
+                }
+                setMediaLoadingState(false, 'play');
+                updateMediaButtonState();
             }
         };
     </script>
 </body>
-
 </html>
