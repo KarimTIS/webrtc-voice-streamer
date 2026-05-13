@@ -175,6 +175,9 @@
         const errorLogs = document.getElementById("error-logs");
         const clearErrorsBtn = document.getElementById("clear-errors-btn");
 
+        let activeStreams = [];
+        let mediaPlayerPollInterval = null;
+
         // UI Error Logging Function
         function logError(message, err = null) {
             console.error(message, err || "");
@@ -198,7 +201,7 @@
         };
 
         // Initialize defaults
-        const hostname = window.location.hostname || 'homeassistant.local';
+        const hostname = window.location.hostname;
         streamUrlInput.value = `http://homeassistant.local:8081/stream/latest.mp3`;
 
         // Helper to get HA object from parent window
@@ -338,6 +341,17 @@
                         } else {
                             console.warn("Peer connection not initialized when webrtc_answer received.");
                         }
+                    } else if (msg.type === "available_streams") {
+                        activeStreams = msg.streams || [];
+                        console.log("Available streams updated:", activeStreams);
+                    } else if (msg.type === "stream_available") {
+                        if (!activeStreams.includes(msg.stream_id)) {
+                            activeStreams.push(msg.stream_id);
+                        }
+                        console.log("Stream available:", msg.stream_id, "Active streams:", activeStreams);
+                    } else if (msg.type === "stream_ended") {
+                        activeStreams = activeStreams.filter(id => id !== msg.stream_id);
+                        console.log("Stream ended:", msg.stream_id, "Active streams:", activeStreams);
                     } else if (msg.type === "error") {
                         logError("Received error from signaling server: " + msg.message);
                     } else {
@@ -480,6 +494,48 @@
         }
 
         // Media Player Controls
+        function stopMediaPlayerPolling() {
+            if (mediaPlayerPollInterval) {
+                clearInterval(mediaPlayerPollInterval);
+                mediaPlayerPollInterval = null;
+            }
+        }
+
+        function startMediaPlayerPolling(entity_id) {
+            stopMediaPlayerPolling();
+            let attempts = 0;
+            mediaPlayerPollInterval = setInterval(async () => {
+                attempts++;
+                let state = null;
+                const hass = getHass();
+                if (hass) {
+                    const entity = hass.states[entity_id];
+                    if (entity) state = entity.state;
+                } else {
+                    try {
+                        const res = await fetch("./api/media_players");
+                        if (res.ok) {
+                            const players = await res.json();
+                            const player = players.find(p => p.entity_id === entity_id);
+                            if (player) state = player.state;
+                        }
+                    } catch (e) { }
+                }
+
+                if (state && ['idle', 'paused', 'standby', 'off'].includes(state)) {
+                    if (attempts > 5) {
+                        console.log(`Media player ${entity_id} state is ${state}. Reverting UI to Play.`);
+                        isMediaPlaying = false;
+                        updateMediaButtonState();
+                        stopMediaPlayerPolling();
+                    }
+                } else if (state === 'playing') {
+                    // Once playing, ensure a quick revert if it stops later
+                    attempts = 6;
+                }
+            }, 2000);
+        }
+
         function setMediaLoadingState(isLoading, action) {
             btnMediaToggle.disabled = isLoading;
             if (isLoading) {
@@ -527,6 +583,7 @@
                 // Stop action
                 console.log(`Stop requested. Target player: ${entity_id}`);
                 setMediaLoadingState(true, 'stop');
+                stopMediaPlayerPolling();
 
                 let success = false;
                 const hass = getHass();
@@ -565,6 +622,11 @@
                 updateMediaButtonState();
             } else {
                 // Play action
+                if (activeStreams.length === 0) {
+                    logError("No active microphone streams available. Please start the microphone first.");
+                    return;
+                }
+
                 console.log(`Play requested. Target player: ${entity_id}, URL: ${media_content_id}`);
                 setMediaLoadingState(true, 'play');
 
@@ -604,6 +666,7 @@
 
                 if (success) {
                     isMediaPlaying = true;
+                    startMediaPlayerPolling(entity_id);
                 }
                 setMediaLoadingState(false, 'play');
                 updateMediaButtonState();
