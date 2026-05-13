@@ -81,18 +81,19 @@
                     </select>
                 </div>
 
-                <div class="flex flex-col sm:flex-row gap-3 pt-2">
-                    <button id="btn-play" class="flex-1 bg-sky-500 hover:bg-sky-600 text-white border-none py-3 px-6 rounded-xl font-medium cursor-pointer transition-all duration-200 flex items-center justify-center gap-2 shadow-lg shadow-sky-500/20 active:scale-[0.98]">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                <div class="flex pt-2">
+                    <button id="btn-media-toggle" class="w-full bg-sky-500 hover:bg-sky-600 text-white border-none py-3 px-6 rounded-xl font-medium cursor-pointer transition-all duration-200 flex items-center justify-center gap-2 shadow-lg shadow-sky-500/20 active:scale-[0.98]">
+                        <svg id="media-icon-play" xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
                             <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" clip-rule="evenodd" />
                         </svg>
-                        Play Stream
-                    </button>
-                    <button id="btn-stop" class="flex-1 bg-transparent hover:bg-red-500/10 text-red-400 border border-red-500/50 py-3 px-6 rounded-xl font-medium cursor-pointer transition-all duration-200 flex items-center justify-center gap-2 active:scale-[0.98]">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                        <svg id="media-icon-stop" xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 hidden" viewBox="0 0 20 20" fill="currentColor">
                             <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8 7a1 1 0 00-1 1v4a1 1 0 001 1h4a1 1 0 001-1V8a1 1 0 00-1-1H8z" clip-rule="evenodd" />
                         </svg>
-                        Stop
+                        <svg id="media-icon-loading" class="animate-spin h-5 w-5 hidden" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                        <span id="media-toggle-text">Play Stream</span>
                     </button>
                 </div>
             </div>
@@ -130,8 +131,12 @@
 
         const streamUrlInput = document.getElementById("stream-url");
         const mediaPlayerSelect = document.getElementById("media-player-select");
-        const btnPlay = document.getElementById("btn-play");
-        const btnStop = document.getElementById("btn-stop");
+        const btnMediaToggle = document.getElementById("btn-media-toggle");
+        const mediaIconPlay = document.getElementById("media-icon-play");
+        const mediaIconStop = document.getElementById("media-icon-stop");
+        const mediaIconLoading = document.getElementById("media-icon-loading");
+        const mediaToggleText = document.getElementById("media-toggle-text");
+        let isMediaPlaying = false;
 
         const errorLogContainer = document.getElementById("error-log-container");
         const errorLogs = document.getElementById("error-logs");
@@ -442,92 +447,133 @@
         }
 
         // Media Player Controls
-        btnPlay.onclick = async () => {
+        function setMediaLoadingState(isLoading, action) {
+            btnMediaToggle.disabled = isLoading;
+            if (isLoading) {
+                btnMediaToggle.classList.add("opacity-75", "cursor-not-allowed");
+                mediaIconPlay.classList.add("hidden");
+                mediaIconStop.classList.add("hidden");
+                mediaIconLoading.classList.remove("hidden");
+                mediaToggleText.textContent = action === 'play' ? "Starting..." : "Stopping...";
+            } else {
+                btnMediaToggle.classList.remove("opacity-75", "cursor-not-allowed");
+                mediaIconLoading.classList.add("hidden");
+            }
+        }
+        
+        function updateMediaButtonState() {
+            if (isMediaPlaying) {
+                // Set to Stop style
+                btnMediaToggle.className = "w-full bg-red-500 hover:bg-red-600 text-white border-none py-3 px-6 rounded-xl font-medium cursor-pointer transition-all duration-200 flex items-center justify-center gap-2 shadow-lg shadow-red-500/20 active:scale-[0.98]";
+                mediaIconPlay.classList.add("hidden");
+                mediaIconStop.classList.remove("hidden");
+                mediaToggleText.textContent = "Stop Media";
+            } else {
+                // Set to Play style
+                btnMediaToggle.className = "w-full bg-sky-500 hover:bg-sky-600 text-white border-none py-3 px-6 rounded-xl font-medium cursor-pointer transition-all duration-200 flex items-center justify-center gap-2 shadow-lg shadow-sky-500/20 active:scale-[0.98]";
+                mediaIconStop.classList.add("hidden");
+                mediaIconPlay.classList.remove("hidden");
+                mediaToggleText.textContent = "Play Stream";
+            }
+        }
+
+        btnMediaToggle.onclick = async () => {
             const entity_id = mediaPlayerSelect.value;
             const media_content_id = streamUrlInput.value;
-            console.log(`Play requested. Target player: ${entity_id}, URL: ${media_content_id}`);
             
             if (!entity_id) {
                 logError("Validation failed: Please select a media player first.");
                 return;
             }
-            if (!media_content_id) {
+            if (!isMediaPlaying && !media_content_id) {
                 logError("Validation failed: Please enter a stream URL.");
                 return;
             }
 
-            const hass = getHass();
-            if (hass) {
-                console.log("Using HA Frontend to invoke media_player.play_media service.");
-                try {
-                    await hass.callService("media_player", "play_media", {
-                        entity_id: entity_id,
-                        media_content_id: media_content_id,
-                        media_content_type: "music"
-                    });
-                    console.log("HA Frontend play_media service call successful.");
-                    return;
-                } catch (e) {
-                    logError("Error playing media via HA Frontend service call.", e);
-                    return;
-                }
-            }
+            if (isMediaPlaying) {
+                // Stop action
+                console.log(`Stop requested. Target player: ${entity_id}`);
+                setMediaLoadingState(true, 'stop');
 
-            console.log("HA Frontend object not available. Falling back to backend /api/play_media.");
-            try {
-                const res = await fetch("./api/play_media", {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ entity_id, media_content_id }),
-                });
-                if (!res.ok) {
-                    const errorText = await res.text();
-                    throw new Error(`Status ${res.status}: ${errorText}`);
+                let success = false;
+                const hass = getHass();
+                if (hass) {
+                    console.log("Using HA Frontend to invoke media_player.media_stop service.");
+                    try {
+                        await hass.callService("media_player", "media_stop", { entity_id });
+                        console.log("HA Frontend media_stop service call successful.");
+                        success = true;
+                    } catch (e) {
+                        logError("Error stopping media via HA Frontend service call.", e);
+                    }
+                } else {
+                    console.log("HA Frontend object not available. Falling back to backend /api/stop_media.");
+                    try {
+                        const res = await fetch("./api/stop_media", {
+                            method: "POST",
+                            headers: { "Content-Type": "application/json" },
+                            body: JSON.stringify({ entity_id }),
+                        });
+                        if (!res.ok) {
+                            const errorText = await res.text();
+                            throw new Error(`Status ${res.status}: ${errorText}`);
+                        }
+                        console.log("Backend stop_media API call successful.");
+                        success = true;
+                    } catch (e) {
+                        logError("Error stopping media via backend API.", e);
+                    }
                 }
-                console.log("Backend play_media API call successful.");
-            } catch (e) {
-                logError("Error playing media via backend API.", e);
-            }
-        };
-
-        btnStop.onclick = async () => {
-            const entity_id = mediaPlayerSelect.value;
-            console.log(`Stop requested. Target player: ${entity_id}`);
-            
-            if (!entity_id) {
-                logError("Validation failed: Please select a media player first.");
-                return;
-            }
-
-            const hass = getHass();
-            if (hass) {
-                console.log("Using HA Frontend to invoke media_player.media_stop service.");
-                try {
-                    await hass.callService("media_player", "media_stop", {
-                        entity_id: entity_id
-                    });
-                    console.log("HA Frontend media_stop service call successful.");
-                    return;
-                } catch (e) {
-                    logError("Error stopping media via HA Frontend service call.", e);
-                    return;
+                
+                if (success) {
+                    isMediaPlaying = false;
                 }
-            }
-
-            console.log("HA Frontend object not available. Falling back to backend /api/stop_media.");
-            try {
-                const res = await fetch("./api/stop_media", {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ entity_id }),
-                });
-                if (!res.ok) {
-                    const errorText = await res.text();
-                    throw new Error(`Status ${res.status}: ${errorText}`);
+                setMediaLoadingState(false, 'stop');
+                updateMediaButtonState();
+            } else {
+                // Play action
+                console.log(`Play requested. Target player: ${entity_id}, URL: ${media_content_id}`);
+                setMediaLoadingState(true, 'play');
+                
+                let success = false;
+                const hass = getHass();
+                if (hass) {
+                    console.log("Using HA Frontend to invoke media_player.play_media service.");
+                    try {
+                        await hass.callService("media_player", "play_media", {
+                            entity_id: entity_id,
+                            media_content_id: media_content_id,
+                            media_content_type: "music"
+                        });
+                        console.log("HA Frontend play_media service call successful.");
+                        success = true;
+                    } catch (e) {
+                        logError("Error playing media via HA Frontend service call.", e);
+                    }
+                } else {
+                    console.log("HA Frontend object not available. Falling back to backend /api/play_media.");
+                    try {
+                        const res = await fetch("./api/play_media", {
+                            method: "POST",
+                            headers: { "Content-Type": "application/json" },
+                            body: JSON.stringify({ entity_id, media_content_id }),
+                        });
+                        if (!res.ok) {
+                            const errorText = await res.text();
+                            throw new Error(`Status ${res.status}: ${errorText}`);
+                        }
+                        console.log("Backend play_media API call successful.");
+                        success = true;
+                    } catch (e) {
+                        logError("Error playing media via backend API.", e);
+                    }
                 }
-                console.log("Backend stop_media API call successful.");
-            } catch (e) {
-                logError("Error stopping media via backend API.", e);
+
+                if (success) {
+                    isMediaPlaying = true;
+                }
+                setMediaLoadingState(false, 'play');
+                updateMediaButtonState();
             }
         };
     </script>
