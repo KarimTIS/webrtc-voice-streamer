@@ -48,17 +48,6 @@ export class SignalingClient {
           case "webrtc_answer":
             console.log("Received WebRTC answer. Setting remote description...");
             if (this.callbacks.onAnswer) this.callbacks.onAnswer(msg.answer);
-
-            // Attempt to extract the local IP from the SDP answer
-            const sdp = msg.answer.sdp;
-            const ipMatch = sdp.match(/c=IN IP4 ([0-9.]+)/);
-            if (ipMatch && ipMatch[1] && ipMatch[1] !== "0.0.0.0" && ipMatch[1] !== "127.0.0.1") {
-              const detectedIp = ipMatch[1];
-              console.log("Detected local IP from SDP:", detectedIp);
-              if (this.callbacks.onSdpIpDetected) {
-                this.callbacks.onSdpIpDetected(detectedIp);
-              }
-            }
             break;
 
           case "available_streams":

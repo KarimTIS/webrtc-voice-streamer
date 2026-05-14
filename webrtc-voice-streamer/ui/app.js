@@ -52,16 +52,6 @@ const signalingClient = new SignalingClient({
       webrtcManager.stopMic();
     }
   },
-  onSdpIpDetected: (ip) => {
-    const currentUrl = streamUrlInput.value;
-    if (currentUrl.includes("homeassistant.local")) {
-      streamUrlInput.value = currentUrl.replace("homeassistant.local", ip);
-      console.log(
-        "Updated stream URL to use IP address:",
-        streamUrlInput.value,
-      );
-    }
-  },
 });
 
 // 4. Setup WebRTC Manager
