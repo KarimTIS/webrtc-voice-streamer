@@ -1,0 +1,626 @@
+let ws = null;
+let peerConnection = null;
+let mediaStream = null;
+let audioContext = null;
+let analyser = null;
+let animationFrame = null;
+
+const wsStatus = document.getElementById("ws-status");
+const btnMic = document.getElementById("btn-mic");
+const micErrorMsg = document.getElementById("mic-error-msg");
+const visualizer = document.getElementById("visualizer");
+const canvasCtx = visualizer.getContext("2d");
+
+const streamUrlInput = document.getElementById("stream-url");
+const mediaPlayerSelect = document.getElementById("media-player-select");
+const btnMediaToggle = document.getElementById("btn-media-toggle");
+const mediaIconPlay = document.getElementById("media-icon-play");
+const mediaIconStop = document.getElementById("media-icon-stop");
+const mediaIconLoading = document.getElementById("media-icon-loading");
+const mediaToggleText = document.getElementById("media-toggle-text");
+let isMediaPlaying = false;
+
+const errorLogContainer = document.getElementById("error-log-container");
+const errorLogs = document.getElementById("error-logs");
+const clearErrorsBtn = document.getElementById("clear-errors-btn");
+
+let activeStreams = [];
+let mediaPlayerPollInterval = null;
+
+// UI Error Logging Function
+function logError(message, err = null) {
+  console.error(message, err || "");
+  const time = new Date().toLocaleTimeString();
+  const logEntry = document.createElement("div");
+  logEntry.className = "py-1.5 border-b border-red-900/30 last:border-0";
+
+  let errMsg = err ? err.message || err.toString() : "";
+  // Avoid duplicate error message strings
+  if (errMsg === message) errMsg = "";
+
+  logEntry.textContent = `[${time}] ${message} ${errMsg ? " - " + errMsg : ""}`;
+  errorLogs.prepend(logEntry);
+  errorLogContainer.classList.remove("hidden");
+}
+
+clearErrorsBtn.onclick = () => {
+  errorLogs.innerHTML = "";
+  errorLogContainer.classList.add("hidden");
+  console.log("Error logs cleared.");
+};
+
+// Initialize defaults
+streamUrlInput.value = `http://[IP_ADDRESS]:[PORT]/stream/latest.mp3`; // placeholder
+let defaultHost = "";
+
+async function fetchServerIp() {
+  try {
+    const res = await fetch("./api/local_ip");
+    if (res.ok) {
+      const data = await res.json();
+      if (data.ip && data.ip !== "127.0.0.1") {
+        defaultHost = data.ip;
+        const audioPort = data.audio_port || 8081;
+        streamUrlInput.value = `http://${defaultHost}:${audioPort}/stream/latest.mp3`;
+        console.log(
+          `Fetched server config: IP ${defaultHost}, Port ${audioPort}`,
+        );
+      }
+    }
+  } catch (e) {
+    console.warn("Failed to fetch server config from backend API.", e);
+  }
+}
+
+fetchServerIp();
+
+// Helper to get HA object from parent window
+function getHass() {
+  try {
+    if (window.parent && window.parent.document) {
+      const ha = window.parent.document.querySelector("home-assistant");
+      if (ha && ha.hass) {
+        return ha.hass;
+      }
+    }
+  } catch (e) {
+    console.warn("Cannot access parent Home Assistant object", e);
+  }
+  return null;
+}
+
+// Fetch Media Players
+async function fetchMediaPlayers() {
+  console.log("Fetching media players...");
+  try {
+    const hass = getHass();
+    let players = [];
+
+    if (hass) {
+      console.log("Using HA frontend object to fetch media players.");
+      players = Object.values(hass.states)
+        .filter((entity) => entity.entity_id.startsWith("media_player."))
+        .map((entity) => ({
+          entity_id: entity.entity_id,
+          name: entity.attributes.friendly_name || entity.entity_id,
+          state: entity.state,
+        }));
+    } else {
+      console.log(
+        "HA frontend object not found. Using backend API /api/media_players.",
+      );
+      const res = await fetch("./api/media_players");
+      if (!res.ok) {
+        throw new Error(`HTTP error! status: ${res.status}`);
+      }
+      players = await res.json();
+      if (!Array.isArray(players)) {
+        throw new Error(players.error || "Invalid response from server");
+      }
+    }
+
+    console.log(`Found ${players.length} media players.`);
+    mediaPlayerSelect.innerHTML =
+      '<option value="">-- Select a Media Player --</option>';
+    players.forEach((p) => {
+      const opt = document.createElement("option");
+      opt.value = p.entity_id;
+      opt.textContent = `${p.name} (${p.state})`;
+      mediaPlayerSelect.appendChild(opt);
+    });
+  } catch (e) {
+    logError("Failed to load media players", e);
+    mediaPlayerSelect.innerHTML = '<option value="">Failed to load</option>';
+  }
+}
+
+function waitForHassAndInitialize(maxRetries = 10, interval = 500) {
+  let retries = 0;
+  const checkHass = () => {
+    const hass = getHass();
+    if (hass) {
+      console.log(
+        "Hass object found immediately. Proceeding to fetch media players.",
+      );
+      fetchMediaPlayers();
+    } else if (retries < maxRetries) {
+      retries++;
+      console.log(
+        `Waiting for hass object... (Attempt ${retries}/${maxRetries})`,
+      );
+      setTimeout(checkHass, interval);
+    } else {
+      console.warn(
+        "Hass object not found after retries. Falling back to backend API.",
+      );
+      fetchMediaPlayers();
+    }
+  };
+  checkHass();
+}
+
+waitForHassAndInitialize();
+
+// Setup WebSocket
+function connectWebSocket() {
+  const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
+  const wsPath = window.location.pathname.replace(/\/$/, "") + "/ws";
+  const wsUrl = `${protocol}//${window.location.host}${wsPath}`;
+
+  console.log(`Attempting WebSocket connection to: ${wsUrl}`);
+  ws = new WebSocket(wsUrl);
+
+  ws.onopen = () => {
+    console.log("WebSocket connection opened successfully.");
+    wsStatus.textContent = "Connected";
+    wsStatus.className =
+      "px-3 py-1 rounded-full text-sm font-medium bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 transition-colors duration-300";
+  };
+
+  ws.onclose = () => {
+    console.log(
+      "WebSocket connection closed. Attempting to reconnect in 3 seconds...",
+    );
+    wsStatus.textContent = "Disconnected";
+    wsStatus.className =
+      "px-3 py-1 rounded-full text-sm font-medium bg-red-500/20 text-red-400 border border-red-500/30 transition-colors duration-300";
+    stopMic();
+    setTimeout(connectWebSocket, 3000);
+  };
+
+  ws.onerror = (err) => {
+    logError("WebSocket encountered an error.", err);
+  };
+
+  ws.onmessage = async (e) => {
+    console.log("WebSocket message received:", e.data);
+    try {
+      const msg = JSON.parse(e.data);
+
+      if (msg.type === "sender_ready") {
+        console.log("Sender ready received, creating WebRTC offer...");
+        if (peerConnection) {
+          const offer = await peerConnection.createOffer({
+            offerToReceiveAudio: false,
+            offerToReceiveVideo: false,
+          });
+          await peerConnection.setLocalDescription(offer);
+          console.log("Sending WebRTC offer over WebSocket...");
+          ws.send(
+            JSON.stringify({
+              type: "webrtc_offer",
+              offer: {
+                sdp: peerConnection.localDescription.sdp,
+                type: peerConnection.localDescription.type,
+              },
+            }),
+          );
+        } else {
+          console.warn(
+            "Peer connection not initialized when sender_ready received.",
+          );
+        }
+      } else if (msg.type === "webrtc_answer") {
+        console.log("Received WebRTC answer. Setting remote description...");
+        if (peerConnection) {
+          await peerConnection.setRemoteDescription(
+            new RTCSessionDescription(msg.answer),
+          );
+          console.log(
+            "Remote description set successfully. WebRTC connection established.",
+          );
+
+          // Attempt to extract the local IP from the SDP answer to help DLNA/WiiM players
+          const sdp = msg.answer.sdp;
+          const ipMatch = sdp.match(/c=IN IP4 ([0-9.]+)/);
+          if (
+            ipMatch &&
+            ipMatch[1] &&
+            ipMatch[1] !== "0.0.0.0" &&
+            ipMatch[1] !== "127.0.0.1"
+          ) {
+            const detectedIp = ipMatch[1];
+            console.log("Detected local IP from SDP:", detectedIp);
+            const currentUrl = streamUrlInput.value;
+            if (currentUrl.includes("homeassistant.local")) {
+              streamUrlInput.value = currentUrl.replace(
+                "homeassistant.local",
+                detectedIp,
+              );
+              console.log(
+                "Updated stream URL to use IP address:",
+                streamUrlInput.value,
+              );
+            }
+          }
+        } else {
+          console.warn(
+            "Peer connection not initialized when webrtc_answer received.",
+          );
+        }
+      } else if (msg.type === "available_streams") {
+        activeStreams = msg.streams || [];
+        console.log("Available streams updated:", activeStreams);
+      } else if (msg.type === "stream_available") {
+        if (!activeStreams.includes(msg.stream_id)) {
+          activeStreams.push(msg.stream_id);
+        }
+        console.log(
+          "Stream available:",
+          msg.stream_id,
+          "Active streams:",
+          activeStreams,
+        );
+      } else if (msg.type === "stream_ended") {
+        activeStreams = activeStreams.filter((id) => id !== msg.stream_id);
+        console.log(
+          "Stream ended:",
+          msg.stream_id,
+          "Active streams:",
+          activeStreams,
+        );
+      } else if (msg.type === "error") {
+        logError("Received error from signaling server: " + msg.message);
+      } else {
+        console.log("Received unknown message type:", msg.type);
+      }
+    } catch (err) {
+      logError("Failed to handle WebSocket message.", err);
+    }
+  };
+}
+
+connectWebSocket();
+
+// Start/Stop Mic
+btnMic.onclick = async () => {
+  console.log(
+    "Microphone button clicked. Current state:",
+    mediaStream ? "Active" : "Inactive",
+  );
+  if (mediaStream) {
+    stopMic();
+  } else {
+    await startMic();
+  }
+};
+
+async function startMic() {
+  micErrorMsg.textContent = "";
+  console.log("Requesting microphone access from browser...");
+  try {
+    mediaStream = await navigator.mediaDevices.getUserMedia({
+      audio: {
+        echoCancellation: true,
+        noiseSuppression: true,
+        autoGainControl: true,
+        sampleRate: 16000,
+        channelCount: 1,
+      },
+    });
+    console.log("Microphone access granted.", mediaStream);
+
+    peerConnection = new RTCPeerConnection({ iceServers: [] });
+
+    peerConnection.oniceconnectionstatechange = () => {
+      console.log(
+        "ICE Connection State Change:",
+        peerConnection.iceConnectionState,
+      );
+      if (peerConnection.iceConnectionState === "failed") {
+        logError("WebRTC ICE Connection failed.");
+      }
+    };
+
+    mediaStream.getAudioTracks().forEach((track) => {
+      console.log("Adding audio track to peer connection:", track.label);
+      peerConnection.addTrack(track, mediaStream);
+    });
+
+    setupVisualization(mediaStream);
+
+    console.log("Sending start_sending command over WebSocket.");
+    ws.send(JSON.stringify({ type: "start_sending" }));
+
+    // Update UI state to "Stop"
+    btnMic.innerHTML = `
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 10a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1h-4a1 1 0 01-1-1v-4z" />
+                    </svg>
+                    <span>Stop Microphone</span>
+                `;
+    btnMic.className =
+      "w-full bg-red-500 hover:bg-red-600 text-white border-none py-3 px-6 rounded-xl text-lg font-medium cursor-pointer transition-all duration-200 flex items-center justify-center gap-2 shadow-lg shadow-red-500/20 active:scale-[0.98]";
+  } catch (e) {
+    logError("Failed to start microphone", e);
+    micErrorMsg.textContent = "Error: " + e.message;
+  }
+}
+
+function stopMic() {
+  console.log("Stopping microphone and cleaning up WebRTC resources...");
+  if (mediaStream) {
+    mediaStream.getTracks().forEach((t) => {
+      console.log("Stopping track:", t.kind, t.label);
+      t.stop();
+    });
+    mediaStream = null;
+    console.log("Media stream stopped.");
+  }
+  if (peerConnection) {
+    peerConnection.close();
+    peerConnection = null;
+    console.log("Peer connection closed.");
+  }
+  if (ws && ws.readyState === WebSocket.OPEN) {
+    console.log("Sending stop_stream command over WebSocket.");
+    ws.send(JSON.stringify({ type: "stop_stream" }));
+  }
+  if (animationFrame) {
+    cancelAnimationFrame(animationFrame);
+    animationFrame = null;
+  }
+
+  canvasCtx.clearRect(0, 0, visualizer.width, visualizer.height);
+
+  // Reset UI state to "Start"
+  btnMic.innerHTML = `
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" />
+                </svg>
+                <span>Start Microphone</span>
+            `;
+  btnMic.className =
+    "w-full bg-sky-500 hover:bg-sky-600 text-white border-none py-3 px-6 rounded-xl text-lg font-medium cursor-pointer transition-all duration-200 flex items-center justify-center gap-2 shadow-lg shadow-sky-500/20 active:scale-[0.98]";
+}
+
+function setupVisualization(stream) {
+  console.log("Setting up audio visualization canvas.");
+  audioContext = new (window.AudioContext || window.webkitAudioContext)();
+  analyser = audioContext.createAnalyser();
+  analyser.fftSize = 256;
+  const source = audioContext.createMediaStreamSource(stream);
+  source.connect(analyser);
+
+  const bufferLength = analyser.frequencyBinCount;
+  const dataArray = new Uint8Array(bufferLength);
+
+  function draw() {
+    animationFrame = requestAnimationFrame(draw);
+    analyser.getByteFrequencyData(dataArray);
+
+    canvasCtx.fillStyle = "#0f172a"; // Tailwind slate-900 equivalent for canvas clear
+    canvasCtx.fillRect(0, 0, visualizer.width, visualizer.height);
+
+    const barWidth = (visualizer.width / bufferLength) * 2.5;
+    let x = 0;
+
+    for (let i = 0; i < bufferLength; i++) {
+      const barHeight = (dataArray[i] / 255) * visualizer.height;
+      // Draw bars using sky-500 base color (rgba 14, 165, 233)
+      const opacity = Math.max(0.15, dataArray[i] / 255);
+      canvasCtx.fillStyle = `rgba(14, 165, 233, ${opacity})`;
+      canvasCtx.fillRect(x, visualizer.height - barHeight, barWidth, barHeight);
+      x += barWidth + 1;
+    }
+  }
+  draw();
+}
+
+// Media Player Controls
+function stopMediaPlayerPolling() {
+  if (mediaPlayerPollInterval) {
+    clearInterval(mediaPlayerPollInterval);
+    mediaPlayerPollInterval = null;
+  }
+}
+
+function startMediaPlayerPolling(entity_id) {
+  stopMediaPlayerPolling();
+  let attempts = 0;
+  mediaPlayerPollInterval = setInterval(async () => {
+    attempts++;
+    let state = null;
+    const hass = getHass();
+    if (hass) {
+      const entity = hass.states[entity_id];
+      if (entity) state = entity.state;
+    } else {
+      try {
+        const res = await fetch("./api/media_players");
+        if (res.ok) {
+          const players = await res.json();
+          const player = players.find((p) => p.entity_id === entity_id);
+          if (player) state = player.state;
+        }
+      } catch (e) {}
+    }
+
+    if (state && ["idle", "paused", "standby", "off"].includes(state)) {
+      if (attempts > 5) {
+        console.log(
+          `Media player ${entity_id} state is ${state}. Reverting UI to Play.`,
+        );
+        isMediaPlaying = false;
+        updateMediaButtonState();
+        stopMediaPlayerPolling();
+      }
+    } else if (state === "playing") {
+      // Once playing, ensure a quick revert if it stops later
+      attempts = 6;
+    }
+  }, 2000);
+}
+
+function setMediaLoadingState(isLoading, action) {
+  btnMediaToggle.disabled = isLoading;
+  if (isLoading) {
+    btnMediaToggle.classList.add("opacity-75", "cursor-not-allowed");
+    mediaIconPlay.classList.add("hidden");
+    mediaIconStop.classList.add("hidden");
+    mediaIconLoading.classList.remove("hidden");
+    mediaToggleText.textContent =
+      action === "play" ? "Starting..." : "Stopping...";
+  } else {
+    btnMediaToggle.classList.remove("opacity-75", "cursor-not-allowed");
+    mediaIconLoading.classList.add("hidden");
+  }
+}
+
+function updateMediaButtonState() {
+  if (isMediaPlaying) {
+    // Set to Stop style
+    btnMediaToggle.className =
+      "w-full bg-red-500 hover:bg-red-600 text-white border-none py-3 px-6 rounded-xl font-medium cursor-pointer transition-all duration-200 flex items-center justify-center gap-2 shadow-lg shadow-red-500/20 active:scale-[0.98]";
+    mediaIconPlay.classList.add("hidden");
+    mediaIconStop.classList.remove("hidden");
+    mediaToggleText.textContent = "Stop Media";
+  } else {
+    // Set to Play style
+    btnMediaToggle.className =
+      "w-full bg-sky-500 hover:bg-sky-600 text-white border-none py-3 px-6 rounded-xl font-medium cursor-pointer transition-all duration-200 flex items-center justify-center gap-2 shadow-lg shadow-sky-500/20 active:scale-[0.98]";
+    mediaIconStop.classList.add("hidden");
+    mediaIconPlay.classList.remove("hidden");
+    mediaToggleText.textContent = "Play Stream";
+  }
+}
+
+btnMediaToggle.onclick = async () => {
+  const entity_id = mediaPlayerSelect.value;
+  const media_content_id = streamUrlInput.value;
+
+  if (!entity_id) {
+    logError("Validation failed: Please select a media player first.");
+    return;
+  }
+  if (!isMediaPlaying && !media_content_id) {
+    logError("Validation failed: Please enter a stream URL.");
+    return;
+  }
+
+  if (isMediaPlaying) {
+    // Stop action
+    console.log(`Stop requested. Target player: ${entity_id}`);
+    setMediaLoadingState(true, "stop");
+    stopMediaPlayerPolling();
+
+    let success = false;
+    const hass = getHass();
+    if (hass) {
+      console.log(
+        "Using HA Frontend to invoke media_player.media_stop service.",
+      );
+      try {
+        await hass.callService("media_player", "media_stop", { entity_id });
+        console.log("HA Frontend media_stop service call successful.");
+        success = true;
+      } catch (e) {
+        logError("Error stopping media via HA Frontend service call.", e);
+      }
+    } else {
+      console.log(
+        "HA Frontend object not available. Falling back to backend /api/stop_media.",
+      );
+      try {
+        const res = await fetch("./api/stop_media", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ entity_id }),
+        });
+        if (!res.ok) {
+          const errorText = await res.text();
+          throw new Error(`Status ${res.status}: ${errorText}`);
+        }
+        console.log("Backend stop_media API call successful.");
+        success = true;
+      } catch (e) {
+        logError("Error stopping media via backend API.", e);
+      }
+    }
+
+    if (success) {
+      isMediaPlaying = false;
+    }
+    setMediaLoadingState(false, "stop");
+    updateMediaButtonState();
+  } else {
+    // Play action
+    if (activeStreams.length === 0) {
+      logError(
+        "No active microphone streams available. Please start the microphone first.",
+      );
+      return;
+    }
+
+    console.log(
+      `Play requested. Target player: ${entity_id}, URL: ${media_content_id}`,
+    );
+    setMediaLoadingState(true, "play");
+
+    let success = false;
+    const hass = getHass();
+    if (hass) {
+      console.log(
+        "Using HA Frontend to invoke media_player.play_media service.",
+      );
+      try {
+        await hass.callService("media_player", "play_media", {
+          entity_id: entity_id,
+          media_content_id: media_content_id,
+          media_content_type: "music",
+        });
+        console.log("HA Frontend play_media service call successful.");
+        success = true;
+      } catch (e) {
+        logError("Error playing media via HA Frontend service call.", e);
+      }
+    } else {
+      console.log(
+        "HA Frontend object not available. Falling back to backend /api/play_media.",
+      );
+      try {
+        const res = await fetch("./api/play_media", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ entity_id, media_content_id }),
+        });
+        if (!res.ok) {
+          const errorText = await res.text();
+          throw new Error(`Status ${res.status}: ${errorText}`);
+        }
+        console.log("Backend play_media API call successful.");
+        success = true;
+      } catch (e) {
+        logError("Error playing media via backend API.", e);
+      }
+    }
+
+    if (success) {
+      isMediaPlaying = true;
+      startMediaPlayerPolling(entity_id);
+    }
+    setMediaLoadingState(false, "play");
+    updateMediaButtonState();
+  }
+};
