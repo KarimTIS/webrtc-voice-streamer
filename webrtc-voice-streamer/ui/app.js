@@ -1,9 +1,9 @@
-import { initLogger } from './logger.js';
-import { HassApi } from './hass-api.js';
-import { AudioVisualizer } from './visualizer.js';
-import { SignalingClient } from './websocket-client.js';
-import { WebRTCManager } from './webrtc-manager.js';
-import { MediaController } from './media-controller.js';
+import { initLogger } from "./logger.js";
+import { HassApi } from "./hass-api.js";
+import { AudioVisualizer } from "./visualizer.js";
+import { SignalingClient } from "./websocket-client.js";
+import { WebRTCManager } from "./webrtc-manager.js";
+import { MediaController } from "./media-controller.js";
 
 // DOM Elements
 const wsStatus = document.getElementById("ws-status");
@@ -19,10 +19,10 @@ const mediaController = new MediaController(hassApi);
 const visualizer = new AudioVisualizer(visualizerCanvas);
 
 // Default stream URL placeholder
-streamUrlInput.value = `http://[IP_ADDRESS]:[PORT]/stream/latest.mp3`;
+streamUrlInput.value = `http://[IP_ADDRESS]:8081/stream/latest.mp3`;
 
 // Fetch initial server config
-hassApi.fetchServerIp().then(data => {
+hassApi.fetchServerIp().then((data) => {
   if (data && data.ip && data.ip !== "127.0.0.1") {
     const defaultHost = data.ip;
     const audioPort = data.audio_port || 8081;
@@ -56,9 +56,12 @@ const signalingClient = new SignalingClient({
     const currentUrl = streamUrlInput.value;
     if (currentUrl.includes("homeassistant.local")) {
       streamUrlInput.value = currentUrl.replace("homeassistant.local", ip);
-      console.log("Updated stream URL to use IP address:", streamUrlInput.value);
+      console.log(
+        "Updated stream URL to use IP address:",
+        streamUrlInput.value,
+      );
     }
-  }
+  },
 });
 
 // 4. Setup WebRTC Manager
