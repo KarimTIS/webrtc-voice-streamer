@@ -21,9 +21,6 @@ export LOG_LEVEL=$(jq -r '.log_level // "info"' /data/options.json)
 export AUDIO_PORT=$(jq -r '.audio_port // "8081"' /data/options.json)
 export HA_ADDRESS=$(jq -r '.ha_address // "http://homeassistant:8123"' /data/options.json)
 
-echo "[INFO] Attempting to register Lovelace resource..."
-python3 /app/register_frontend.py || echo "[WARN] Failed to register frontend resource"
-
 # ── Step 1: Start the server ──
 echo "[SERVER] Starting HTTP on port 8099 (behind Ingress)"
 
