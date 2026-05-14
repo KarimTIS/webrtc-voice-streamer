@@ -2,6 +2,7 @@ import asyncio
 import json
 import logging
 import os
+import socket
 import uuid
 from typing import Dict
 
@@ -33,8 +34,26 @@ class VoiceStreamingServer:
         self.app.router.add_get("/api/media_players", self.api_media_players)
         self.app.router.add_post("/api/play_media", self.api_play_media)
         self.app.router.add_post("/api/stop_media", self.api_stop_media)
+        self.app.router.add_get("/api/local_ip", self.api_local_ip)
         self.start_time = asyncio.get_event_loop().time()
         self.cleanup_task = None
+
+    def get_local_ip(self):
+        try:
+            s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+            s.connect(('10.255.255.255', 1))
+            ip = s.getsockname()[0]
+            s.close()
+            return ip
+        except Exception:
+            return '127.0.0.1'
+
+    async def api_local_ip(self, request):
+        audio_port = int(os.environ.get("AUDIO_PORT", 8081))
+        return web.json_response({
+            "ip": self.get_local_ip(),
+            "audio_port": audio_port
+        })
 
     async def metrics_handler(self, request):
         """Provide Prometheus-compatible or JSON metrics"""
