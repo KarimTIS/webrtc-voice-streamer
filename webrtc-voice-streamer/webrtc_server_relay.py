@@ -584,6 +584,10 @@ class VoiceStreamingServer:
         # Add index route for Ingress UI
         self.app.router.add_get("/", self.index_handler)
 
+        # Add static route for UI assets
+        ui_path = os.path.join(os.path.dirname(__file__), "ui")
+        self.app.router.add_static("/ui", ui_path)
+
         logger.info("Audio Stream Server routes merged into main application")
 
         runner = web.AppRunner(self.app)
