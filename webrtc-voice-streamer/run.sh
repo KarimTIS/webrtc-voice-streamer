@@ -7,12 +7,10 @@ echo "════════════════════════�
 echo "      WebRTC Voice Add-on Starting      "
 echo "════════════════════════════════════════"
 
-# ── Step 0.5: Register Frontend Resource ──
 export LOG_LEVEL=$(jq -r '.log_level // "info"' /data/options.json)
 export AUDIO_PORT=$(jq -r '.audio_port // "8081"' /data/options.json)
 export HA_ADDRESS=$(jq -r '.ha_address // "http://homeassistant:8123"' /data/options.json)
 
-# ── Step 1: Start the server ──
 echo "[SERVER] Starting HTTP on port 8099 (behind Ingress)"
 
 export PORT=8099
