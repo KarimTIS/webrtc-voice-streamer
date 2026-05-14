@@ -41,19 +41,16 @@ class VoiceStreamingServer:
     def get_local_ip(self):
         try:
             s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-            s.connect(('10.255.255.255', 1))
+            s.connect(("10.255.255.255", 1))
             ip = s.getsockname()[0]
             s.close()
             return ip
         except Exception:
-            return '127.0.0.1'
+            return "127.0.0.1"
 
     async def api_local_ip(self, request):
         audio_port = int(os.environ.get("AUDIO_PORT", 8081))
-        return web.json_response({
-            "ip": self.get_local_ip(),
-            "audio_port": audio_port
-        })
+        return web.json_response({"ip": self.get_local_ip(), "audio_port": audio_port})
 
     async def metrics_handler(self, request):
         """Provide Prometheus-compatible or JSON metrics"""
@@ -594,24 +591,6 @@ class VoiceStreamingServer:
 
         site = web.TCPSite(runner, host, base_port)
         await site.start()
-
-        # ── STATE PERSISTENCE ──
-        # Write the active port to a state file for the frontend to discover
-        try:
-            state_dir = "/config/www/voice_streaming_backend"
-            os.makedirs(state_dir, exist_ok=True)
-            with open(f"{state_dir}/server_state.json", "w") as f:
-                json.dump(
-                    {
-                        "active_port": base_port,
-                        "ssl": False,
-                        "started_at": asyncio.get_event_loop().time(),
-                    },
-                    f,
-                )
-            logger.info(f"Valid Server State written to {state_dir}/server_state.json")
-        except Exception as e:
-            logger.warning(f"Could not write server state: {e}")
 
         self.cleanup_task = asyncio.create_task(self.cleanup_stale_streams())
         logger.info(f"✅ Server successfully started on http://{host}:{base_port}")
