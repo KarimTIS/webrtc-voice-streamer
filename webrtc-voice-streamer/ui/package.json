@@ -1,0 +1,12 @@
+{
+  "name": "webrtc-voice-streamer-ui",
+  "version": "1.0.0",
+  "description": "Tailwind CSS compiler for WebRTC Voice Streamer Add-on UI",
+  "scripts": {
+    "build": "npx tailwindcss -i ./css/input.css -o ./css/styles.css --minify",
+    "watch": "npx tailwindcss -i ./css/input.css -o ./css/styles.css --watch"
+  },
+  "devDependencies": {
+    "tailwindcss": "^3.4.3"
+  }
+}

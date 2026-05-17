@@ -79,7 +79,7 @@ class VoiceStreamingServer:
         )
 
     async def index_handler(self, request):
-        index_path = os.path.join(os.path.dirname(__file__), "ui", "index.html")
+        index_path = os.path.join(os.path.dirname(__file__), "ui", "html", "index.html")
         if os.path.exists(index_path):
             return web.FileResponse(index_path)
         return web.Response(
