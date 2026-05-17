@@ -88,8 +88,8 @@ async def license_middleware(request: web.Request, handler):
     """
     aiohttp middleware to protect routes.
     """
-    # 1. Bypass check for health and utility routes
-    if request.path in ["/health", "/metrics", "/ca.crt"]:
+    # 1. Bypass check for health and utility routes, and static assets
+    if request.path in ["/health", "/metrics", "/ca.crt"] or request.path.startswith("/ui/"):
         return await handler(request)
 
     # 2. Perform license check
@@ -99,19 +99,22 @@ async def license_middleware(request: web.Request, handler):
     if license_data and license_data.get("status") == "success":
         return await handler(request)
 
+    # 3. Serve unauthorized HTML page if license verification failed
+    status_int = 401
     if license_data and isinstance(license_data, dict):
         status = license_data.get("status", 401)
-        message = license_data.get("message", "Unauthorized")
         try:
             status_int = int(status)
         except:
             status_int = 401
 
-        return web.json_response(
-            {"status": "error", "message": message}, status=status_int
-        )
+    unauth_path = os.path.join(
+        os.path.dirname(__file__), "ui", "html", "unauthorized.html"
+    )
+    if os.path.exists(unauth_path):
+        return web.FileResponse(unauth_path, status=status_int)
 
     return web.json_response(
         {"status": "error", "message": "Unauthorized: License verification failed"},
-        status=401,
+        status=status_int,
     )
