@@ -17,6 +17,3 @@ config/
 # OS
 .DS_Store
 Thumbs.db
-
-# Dependencies
-node_modules/
