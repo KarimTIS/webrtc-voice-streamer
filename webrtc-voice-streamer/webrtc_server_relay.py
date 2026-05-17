@@ -83,7 +83,7 @@ class VoiceStreamingServer:
         if os.path.exists(index_path):
             return web.FileResponse(index_path)
         return web.Response(
-            text="Web UI not found. Please create ui/index.html", status=404
+            text="Web UI not found. Please create ui/html/index.html", status=404
         )
 
     async def _ha_api_request(self, method, endpoint, json_data=None):
