@@ -10,9 +10,3 @@ docs/
 .DS_Store
 Thumbs.db
 
-# Node/Tailwind build files in ui/
-ui/node_modules/
-ui/package.json
-ui/package-lock.json
-ui/tailwind.config.js
-ui/css/input.css
